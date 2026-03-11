@@ -1,5 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,46 +13,26 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { usePublicDoctors, useSpecialties } from '@/hooks/useAppointments';
-import { useHospitals } from '@/hooks/useHospitals';
-import type { DoctorResponseDto } from '@/types/generated/patient-api';
+import { useHospitals, useHospitalCities } from '@/hooks/useHospitals';
+import type { HospitalResponseDto } from '@/types/hospital.types';
 
-// ── Helper ──────────────────────────────────────────────────────────────────
-function getSpecialtyLabel(specialty: string) {
-  const map: Record<string, string> = {
-    Pulmonology: 'Hô hấp',
-    'Thoracic Surgery': 'Phẫu thuật lồng ngực',
-    'Respiratory Medicine': 'Nội khoa hô hấp',
-    Tuberculosis: 'Lao phổi',
-  };
-  return map[specialty] ?? specialty;
-}
-
-function getTitleLabel(title?: string) {
-  const map: Record<string, string> = {
-    SPECIALIST_DOCTOR_1: 'BS. CK1',
-    SPECIALIST_DOCTOR_2: 'BS. CK2',
-    MASTER: 'ThS. BS',
-    DOCTOR_ASSOCIATE_PROFESSOR: 'PGS. TS',
-    DOCTOR_PROFESSOR: 'GS. TS',
-    DOCTOR: 'BS',
-    PHD: 'TS. BS',
-  };
-  return title ? (map[title] ?? title) : 'BS';
-}
-
-// ── Doctor Card ──────────────────────────────────────────────────────────────
-function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
+// ── Hospital Card ─────────────────────────────────────────────────────────────
+function HospitalCard({ hospital }: { hospital: HospitalResponseDto }) {
   const router = useRouter();
-  const [avatarError, setAvatarError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const isClinic = hospital.name.toLowerCase().includes('phòng khám');
+  const typeLabel = isClinic ? 'Phòng khám' : 'Bệnh viện';
+  const typeColor = isClinic ? '#22C55E' : '#0A7CFF';
+  const typeBg = isClinic ? '#F0FDF4' : '#EFF6FF';
+  const logo = hospital.logoUrl;
 
-  const initials = doctor.fullName
-    ? doctor.fullName
-        .split(' ')
-        .slice(-2)
-        .map((w) => w[0]?.toUpperCase() ?? '')
-        .join('')
-    : '?';
+  // Initials fallback (first letter of each word, max 2)
+  const initials = hospital.name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
 
   return (
     <View
@@ -70,24 +50,22 @@ function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
       }}
     >
       <Pressable
-        onPress={() => router.push(`/doctors/${doctor.id}`)}
+        onPress={() => router.push(`/hospitals/${hospital.id}` as any)}
         style={({ pressed }) => ({
-          backgroundColor: 'white',
-          borderRadius: 16,
-          padding: 16,
-          borderWidth: 1,
-          borderColor: '#F1F5F9',
-          shadowColor: '#000',
-          shadowOpacity: 0.04,
-          shadowRadius: 8,
-          elevation: 1,
-          marginBottom: 12,
-          opacity: pressed ? 0.93 : 1,
+          marginTop: 14,
+          backgroundColor: '#EFF6FF',
+          borderRadius: 12,
+          paddingVertical: 12,
+          alignItems: 'center',
+          opacity: pressed ? 0.85 : 1,
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: 6,
         })}
       >
-        {/* Top row: avatar + info */}
+        {/* Top row: logo + info */}
         <View style={{ flexDirection: 'row', gap: 14 }}>
-          {/* Avatar */}
+          {/* Circular logo */}
           <View
             style={{
               width: 72,
@@ -100,12 +78,12 @@ function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
               flexShrink: 0,
             }}
           >
-            {doctor.avatarUrl && !avatarError ? (
+            {logo && !logoError ? (
               <Image
-                source={{ uri: doctor.avatarUrl }}
+                source={{ uri: logo }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
-                onError={() => setAvatarError(true)}
+                onError={() => setLogoError(true)}
               />
             ) : (
               <Text
@@ -118,66 +96,49 @@ function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
 
           {/* Info */}
           <View style={{ flex: 1 }}>
-            <Text
+            {/* Type tag */}
+            <View
               style={{
-                fontSize: 11,
-                color: '#6B7280',
-                fontWeight: '500',
-                marginBottom: 2,
+                alignSelf: 'flex-start',
+                backgroundColor: typeBg,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 8,
+                marginBottom: 6,
               }}
             >
-              {getTitleLabel(doctor.title)}
-            </Text>
+              <Text
+                style={{ color: typeColor, fontSize: 11, fontWeight: '600' }}
+              >
+                {typeLabel}
+              </Text>
+            </View>
+
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: '700',
                 color: '#1F2937',
-                marginBottom: 2,
+                lineHeight: 22,
               }}
-              numberOfLines={1}
+              numberOfLines={2}
             >
-              {doctor.fullName ?? 'Bác sĩ'}
+              {hospital.name}
             </Text>
-            {doctor.yearsOfExperience && (
-              <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 6 }}>
-                {doctor.yearsOfExperience} năm kinh nghiệm
-              </Text>
-            )}
-            {doctor.specialty && (
-              <View
-                style={{
-                  alignSelf: 'flex-start',
-                  backgroundColor: '#EFF6FF',
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderRadius: 8,
-                }}
+
+            {hospital.province && (
+              <Text
+                style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}
+                numberOfLines={1}
               >
-                <Text
-                  style={{ color: '#0A7CFF', fontSize: 11, fontWeight: '600' }}
-                >
-                  {getSpecialtyLabel(doctor.specialty)}
-                </Text>
-              </View>
+                {hospital.province}
+              </Text>
             )}
           </View>
-
-          {/* Rating */}
-          {!!doctor.averageRating && parseFloat(doctor.averageRating) > 0 && (
-            <View style={{ alignItems: 'center', gap: 2 }}>
-              <MaterialIcons name="star" size={16} color="#FBBF24" />
-              <Text
-                style={{ fontSize: 12, fontWeight: '700', color: '#1F2937' }}
-              >
-                {parseFloat(doctor.averageRating).toFixed(1)}
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* Address */}
-        {(doctor.address || doctor.primaryHospital?.address) && (
+        {/* Address row */}
+        {hospital.address && (
           <View
             style={{
               flexDirection: 'row',
@@ -201,7 +162,7 @@ function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
               }}
               numberOfLines={2}
             >
-              {doctor.address || doctor.primaryHospital?.address}
+              {hospital.address}
             </Text>
           </View>
         )}
@@ -211,27 +172,32 @@ function DoctorCard({ doctor }: { doctor: DoctorResponseDto }) {
 }
 
 // ── Filter Bottom Sheet ───────────────────────────────────────────────────────
-interface FilterState {
-  specialty: string;
-  hospitalId: string;
+interface HospitalFilter {
+  city: string;
+  type: 'all' | 'hospital' | 'clinic';
 }
 
-function FilterSheet({
+function HospitalFilterSheet({
   visible,
   current,
   onApply,
   onClose,
 }: {
   visible: boolean;
-  current: FilterState;
-  onApply: (f: FilterState) => void;
+  current: HospitalFilter;
+  onApply: (f: HospitalFilter) => void;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState<FilterState>(current);
-  const specialtiesQuery = useSpecialties();
-  const hospitalsQuery = useHospitals({ page: 1, limit: 50 });
+  const [draft, setDraft] = useState<HospitalFilter>(current);
+  const citiesQuery = useHospitalCities();
 
   const onOpen = useCallback(() => setDraft(current), [current]);
+
+  const typeOptions: { value: HospitalFilter['type']; label: string }[] = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'hospital', label: 'Bệnh viện' },
+    { value: 'clinic', label: 'Phòng khám' },
+  ];
 
   return (
     <Modal
@@ -253,14 +219,13 @@ function FilterSheet({
           paddingHorizontal: 20,
           paddingTop: 12,
           paddingBottom: 32,
-          maxHeight: '80%',
+          maxHeight: '75%',
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
         }}
       >
-        {/* Handle */}
         <View
           style={{
             width: 40,
@@ -283,7 +248,7 @@ function FilterSheet({
         </Text>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Specialty section */}
+          {/* Type filter */}
           <Text
             style={{
               fontSize: 14,
@@ -292,18 +257,68 @@ function FilterSheet({
               marginBottom: 12,
             }}
           >
-            Chuyên khoa
+            Loại cơ sở
+          </Text>
+          {typeOptions.map((opt) => (
+            <Pressable
+              key={opt.value}
+              onPress={() => setDraft((d) => ({ ...d, type: opt.value }))}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: '#F8FAFC',
+              }}
+            >
+              <View
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  borderWidth: 2,
+                  borderColor: draft.type === opt.value ? '#0A7CFF' : '#CBD5E1',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {draft.type === opt.value && (
+                  <View
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#0A7CFF',
+                    }}
+                  />
+                )}
+              </View>
+              <Text style={{ fontSize: 14, color: '#374151' }}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+
+          {/* City filter */}
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: '#374151',
+              marginTop: 20,
+              marginBottom: 12,
+            }}
+          >
+            Tỉnh / Thành phố
           </Text>
           {[
             { value: '', label: 'Tất cả' },
-            ...(specialtiesQuery.data ?? []).map((s) => ({
-              value: s,
-              label: getSpecialtyLabel(s),
-            })),
+            ...(citiesQuery.data ?? []).map((c) => ({ value: c, label: c })),
           ].map((item) => (
             <Pressable
               key={item.value}
-              onPress={() => setDraft((d) => ({ ...d, specialty: item.value }))}
+              onPress={() => setDraft((d) => ({ ...d, city: item.value }))}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -320,12 +335,12 @@ function FilterSheet({
                   borderRadius: 10,
                   borderWidth: 2,
                   borderColor:
-                    draft.specialty === item.value ? '#0A7CFF' : '#CBD5E1',
+                    draft.city === item.value ? '#0A7CFF' : '#CBD5E1',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                {draft.specialty === item.value && (
+                {draft.city === item.value && (
                   <View
                     style={{
                       width: 10,
@@ -341,80 +356,12 @@ function FilterSheet({
               </Text>
             </Pressable>
           ))}
-
-          {/* Hospital section */}
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#374151',
-              marginTop: 20,
-              marginBottom: 12,
-            }}
-          >
-            Nơi khám
-          </Text>
-          {[
-            { value: '', label: 'Tất cả' },
-            ...(hospitalsQuery.data?.items ?? []).map((h) => ({
-              value: h.id,
-              label: h.name,
-            })),
-          ].map((item) => (
-            <Pressable
-              key={item.value}
-              onPress={() =>
-                setDraft((d) => ({ ...d, hospitalId: item.value }))
-              }
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 12,
-                paddingVertical: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: '#F8FAFC',
-              }}
-            >
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 10,
-                  borderWidth: 2,
-                  borderColor:
-                    draft.hospitalId === item.value ? '#0A7CFF' : '#CBD5E1',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {draft.hospitalId === item.value && (
-                  <View
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#0A7CFF',
-                    }}
-                  />
-                )}
-              </View>
-              <Text
-                style={{ fontSize: 14, color: '#374151' }}
-                numberOfLines={1}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
           <View style={{ height: 20 }} />
         </ScrollView>
 
-        {/* Action buttons */}
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
           <Pressable
-            onPress={() => {
-              setDraft({ specialty: '', hospitalId: '' });
-            }}
+            onPress={() => setDraft({ city: '', type: 'all' })}
             style={({ pressed }) => ({
               flex: 1,
               borderRadius: 12,
@@ -451,15 +398,15 @@ function FilterSheet({
 }
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
-export function DoctorListScreen() {
+export function HospitalListScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterState>({
-    specialty: '',
-    hospitalId: '',
-  });
   const [searchDebounced, setSearchDebounced] = useState('');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<HospitalFilter>({
+    city: '',
+    type: 'all',
+  });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearchChange = (text: string) => {
@@ -468,26 +415,29 @@ export function DoctorListScreen() {
     debounceRef.current = setTimeout(() => setSearchDebounced(text), 400);
   };
 
-  const doctorsQuery = usePublicDoctors({
-    page: 1,
-    limit: 20,
+  const hospitalsQuery = useHospitals({
     search: searchDebounced || undefined,
-    specialty: activeFilter.specialty || undefined,
-    hospitalId: activeFilter.hospitalId || undefined,
+    city: activeFilter.city || undefined,
+    page: 1,
+    limit: 50,
   });
 
-  const hasFilters = activeFilter.specialty || activeFilter.hospitalId;
-  const doctors = doctorsQuery.data?.items ?? [];
+  const hasFilters = activeFilter.city || activeFilter.type !== 'all';
+
+  const rawHospitals = hospitalsQuery.data?.items ?? [];
+  const hospitals = rawHospitals.filter((h) => {
+    if (activeFilter.type === 'clinic')
+      return h.name.toLowerCase().includes('phòng khám');
+    if (activeFilter.type === 'hospital')
+      return !h.name.toLowerCase().includes('phòng khám');
+    return true;
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* ── Custom Header ── */}
+      {/* Custom Header */}
       <View
         style={{
           backgroundColor: '#0A7CFF',
@@ -496,7 +446,6 @@ export function DoctorListScreen() {
           paddingHorizontal: 16,
         }}
       >
-        {/* back + title row */}
         <View
           style={{
             flexDirection: 'row',
@@ -513,11 +462,10 @@ export function DoctorListScreen() {
           <Text
             style={{ color: 'white', fontSize: 18, fontWeight: '700', flex: 1 }}
           >
-            Tìm bác sĩ
+            Cơ sở y tế
           </Text>
         </View>
 
-        {/* Search bar */}
         <View
           style={{
             flexDirection: 'row',
@@ -531,7 +479,7 @@ export function DoctorListScreen() {
         >
           <MaterialIcons name="search" size={20} color="#94A3B8" />
           <TextInput
-            placeholder="Tên bác sĩ, triệu chứng, chuyên khoa"
+            placeholder="Tên bệnh viện, phòng khám..."
             placeholderTextColor="#94A3B8"
             value={search}
             onChangeText={handleSearchChange}
@@ -551,7 +499,7 @@ export function DoctorListScreen() {
         </View>
       </View>
 
-      {/* ── Filter chips & count row ── */}
+      {/* Filter row */}
       <View
         style={{
           flexDirection: 'row',
@@ -594,18 +542,16 @@ export function DoctorListScreen() {
             Bộ lọc{hasFilters ? ' •' : ''}
           </Text>
         </Pressable>
-
         <View style={{ flex: 1 }} />
-
-        {!doctorsQuery.isLoading && (
+        {!hospitalsQuery.isLoading && (
           <Text style={{ fontSize: 12, color: '#94A3B8' }}>
-            {doctors.length} bác sĩ
+            {hospitals.length} cơ sở
           </Text>
         )}
       </View>
 
-      {/* ── List ── */}
-      {doctorsQuery.isLoading ? (
+      {/* List */}
+      {hospitalsQuery.isLoading ? (
         <View
           style={{
             flex: 1,
@@ -616,10 +562,10 @@ export function DoctorListScreen() {
         >
           <ActivityIndicator size="large" color="#0A7CFF" />
           <Text style={{ color: '#94A3B8', fontSize: 14 }}>
-            Đang tìm bác sĩ phù hợp...
+            Đang tải cơ sở y tế...
           </Text>
         </View>
-      ) : doctors.length === 0 ? (
+      ) : hospitals.length === 0 ? (
         <View
           style={{
             flex: 1,
@@ -629,16 +575,16 @@ export function DoctorListScreen() {
             padding: 40,
           }}
         >
-          <MaterialCommunityIcons name="doctor" size={56} color="#CBD5E1" />
+          <MaterialIcons name="apartment" size={56} color="#CBD5E1" />
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151' }}>
-            Không tìm thấy bác sĩ
+            Không tìm thấy cơ sở
           </Text>
           <Text style={{ fontSize: 14, color: '#94A3B8', textAlign: 'center' }}>
-            Thử thay đổi từ khoá tìm kiếm hoặc xoá bộ lọc để xem thêm kết quả.
+            Thử thay đổi từ khoá hoặc xoá bộ lọc.
           </Text>
           {hasFilters && (
             <Pressable
-              onPress={() => setActiveFilter({ specialty: '', hospitalId: '' })}
+              onPress={() => setActiveFilter({ city: '', type: 'all' })}
               style={({ pressed }) => ({
                 backgroundColor: '#EFF6FF',
                 borderRadius: 12,
@@ -655,16 +601,15 @@ export function DoctorListScreen() {
         </View>
       ) : (
         <FlatList
-          data={doctors}
+          data={hospitals}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-          renderItem={({ item }) => <DoctorCard doctor={item} />}
+          renderItem={({ item }) => <HospitalCard hospital={item} />}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {/* ── Filter Sheet ── */}
-      <FilterSheet
+      <HospitalFilterSheet
         visible={filterVisible}
         current={activeFilter}
         onApply={(f) => setActiveFilter(f)}
@@ -674,4 +619,4 @@ export function DoctorListScreen() {
   );
 }
 
-export default DoctorListScreen;
+export default HospitalListScreen;

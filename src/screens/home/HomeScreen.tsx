@@ -71,7 +71,7 @@ function DoctorAvatar({
       style={{
         width: 96,
         height: 96,
-        borderRadius: 12,
+        borderRadius: 96/2,
         overflow: 'hidden',
         marginBottom: 10,
         backgroundColor: '#F1F5F9',
@@ -1050,7 +1050,7 @@ export function HomeScreen() {
         <View>
           <SectionHeader
             title="Cơ sở y tế"
-            onSeeAll={() => router.push('/doctors')}
+            onSeeAll={() => router.push('/hospitals' as any)}
           />
           {hospitalsQuery.isLoading ? (
             <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
@@ -1102,7 +1102,7 @@ export function HomeScreen() {
         <View>
           <SectionHeader
             title="Khám theo chuyên khoa"
-            onSeeAll={() => router.push('/doctors')}
+            onSeeAll={() => router.push('/specialties' as any)}
           />
           {specialtiesQuery.isLoading ? (
             <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
@@ -1117,7 +1117,7 @@ export function HomeScreen() {
         <View style={{ paddingBottom: 32 }}>
           <SectionHeader
             title="Tin tức y khoa"
-            onSeeAll={() => router.push('/settings')}
+            onSeeAll={() => router.push('/news' as any)}
           />
           <FlatList
             horizontal
