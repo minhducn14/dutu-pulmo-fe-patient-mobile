@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Image,
   Pressable,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
   FlatList,
+  useWindowDimensions,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -16,6 +17,7 @@ import { Loading } from '@/components/ui/Loading';
 import { useAuthStore } from '@/store/auth.store';
 import { usePublicDoctors, useSpecialties } from '@/hooks/useAppointments';
 import { useHospitals } from '@/hooks/useHospitals';
+import { theme } from '@/constants/theme';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface QuickAction {
@@ -47,6 +49,7 @@ interface NewsItem {
   badge?: string;
 }
 
+// ─── DoctorAvatar ─────────────────────────────────────────────────────────────
 function DoctorAvatar({
   avatarUrl,
   name,
@@ -58,51 +61,33 @@ function DoctorAvatar({
 
   const initials = name
     ? name
-        .split(' ')
-        .slice(-2)
-        .map((w) => w[0]?.toUpperCase() ?? '')
-        .join('')
+      .split(' ')
+      .slice(-2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('')
     : '?';
 
   const showImage = !!avatarUrl && !hasError;
 
   return (
-    <View
-      style={{
-        width: 96,
-        height: 96,
-        borderRadius: 96/2,
-        overflow: 'hidden',
-        marginBottom: 10,
-        backgroundColor: '#F1F5F9',
-        alignSelf: 'center',
-      }}
-    >
+    <View className="w-24 h-24 rounded-full overflow-hidden mb-2.5 bg-slate-100 self-center">
       {showImage ? (
         <Image
           source={{ uri: avatarUrl }}
-          style={{ width: '100%', height: '100%' }}
+          className="w-full h-full"
           resizeMode="cover"
           onError={() => setHasError(true)}
         />
       ) : (
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#DBEAFE',
-          }}
-        >
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#0A7CFF' }}>
-            {initials}
-          </Text>
+        <View className="flex-1 items-center justify-center bg-blue-100">
+          <Text className="text-3xl font-bold text-blue-600">{initials}</Text>
         </View>
       )}
     </View>
   );
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
 function Header() {
   const { user } = useAuthStore();
   const currentHour = new Date().getHours();
@@ -111,116 +96,43 @@ function Header() {
   else if (currentHour < 18) greeting = 'Chào buổi chiều!';
 
   return (
-    <View
-      style={{
-        backgroundColor: '#0A7CFF',
-        paddingTop: 52,
-        paddingBottom: 56,
-        paddingHorizontal: 16,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-      }}
-    >
+    <View className="bg-primary pt-14 pb-14 px-4 rounded-b-3xl">
       {/* Top bar */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
+      <View className="flex-row items-center justify-between mb-6">
         {/* Logo + User */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View className="flex-row items-center gap-3">
           {/* Logo */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              paddingRight: 12,
-              borderRightWidth: 1,
-              borderRightColor: 'rgba(255,255,255,0.2)',
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: 'white',
-                borderRadius: 12,
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
+          <View className="flex-row items-center gap-2 pr-3 border-r border-white/20">
+            <View className="w-10 h-10 bg-white rounded-xl items-center justify-center overflow-hidden">
               <Image
                 source={require('@/assets/images/logo.jpg')}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                }}
+                className="w-full h-full"
                 resizeMode="contain"
               />
             </View>
             <View>
-              <Text
-                style={{
-                  color: 'white',
-                  fontWeight: '700',
-                  fontSize: 16,
-                  lineHeight: 18,
-                }}
-              >
+              <Text className="text-white font-bold text-base leading-tight">
                 Dutu
               </Text>
-              <Text
-                style={{
-                  color: '#22C55E',
-                  fontWeight: '700',
-                  fontSize: 16,
-                  lineHeight: 18,
-                }}
-              >
+              <Text className="text-secondary font-bold text-base leading-tight">
                 Pulmo
               </Text>
             </View>
           </View>
 
           {/* User */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              paddingLeft: 4,
-            }}
-          >
+          <View className="flex-row items-center gap-2 pl-1">
             <Image
               source={{
                 uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBlsQ3DvfFlr_UgmmwE9It1YpLX8WBOWH06ZQqHysA90z-joKXMu4MZhrbe-cPkp1V9u1uEhXXfEPBL7Tw7C_c9xGTQuY7Del_d-yQpoVNHAWTxYvVf_MiAbNF-0SRxRH6OYRq3__dNi_pR5fBRRP56xt_RP7yrMgDkOqmh8vE5v2PhHBBf4GzodYp-JO5RVpHaBQhDZSlh9X3BTCHvX3U2i-IFMBYoQT626xH4aUrD9qM7q6tlAywfRcibQz5e0bG6lIEveyWKPEFJ',
               }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.3)',
-              }}
+              className="w-10 h-10 rounded-full border border-white/30"
             />
             <View>
-              <Text
-                style={{
-                  color: 'rgba(255,255,255,0.8)',
-                  fontSize: 11,
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                }}
-              >
+              <Text className="text-white/80 text-xs font-semibold uppercase tracking-wide">
                 {greeting}
               </Text>
-              <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
+              <Text className="text-white font-bold text-base">
                 {user?.fullName || 'Khách'}
               </Text>
             </View>
@@ -228,61 +140,18 @@ function Header() {
         </View>
 
         {/* Notification */}
-        <View style={{ position: 'relative' }}>
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+        <View className="relative">
+          <View className="w-10 h-10 rounded-full bg-white/15 items-center justify-center">
             <MaterialIcons name="notifications" size={22} color="white" />
           </View>
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 16,
-              height: 16,
-              borderRadius: 8,
-              backgroundColor: '#EF4444',
-              borderWidth: 2,
-              borderColor: '#0A7CFF',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 9, fontWeight: '700' }}>
-              4
-            </Text>
+          <View className="absolute top-0 right-0 w-4 h-4 rounded-full bg-red-500 border-2 border-primary items-center justify-center">
+            <Text className="text-white text-[9px] font-bold">4</Text>
           </View>
         </View>
       </View>
 
-      {/* Search bar — floats below the header */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: -26,
-          left: 16,
-          right: 16,
-          backgroundColor: 'white',
-          borderRadius: 16,
-          height: 52,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 14,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.12,
-          shadowRadius: 12,
-          elevation: 6,
-        }}
-      >
+      {/* Search bar */}
+      <View className="absolute -bottom-7 left-4 right-4 bg-white rounded-2xl h-14 flex-row items-center px-3.5 shadow-md elevation-6">
         <MaterialIcons
           name="search"
           size={22}
@@ -292,212 +161,138 @@ function Header() {
         <TextInput
           placeholder="Tìm bác sĩ, chuyên khoa, bệnh viện..."
           placeholderTextColor="#94A3B8"
-          style={{ flex: 1, fontSize: 14, color: '#1F2937', fontWeight: '500' }}
+          className="flex-1 text-sm text-gray-800 font-medium"
         />
       </View>
     </View>
   );
 }
+
+// ─── PromoBanner ──────────────────────────────────────────────────────────────
+const BANNERS = [
+  {
+    id: '1',
+    badge: 'CHĂM SÓC TOÀN DIỆN',
+    title: 'Chăm sóc sức khỏe\nphổi toàn diện',
+    cta: 'Khám phá ngay',
+    overlay: 'rgba(10,124,255,0.85)',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYxDTSa51LrRLJsK4BTzCss1JQTQgnOsX1g-rO51r4EYTNrOScpK4-yHLycKeck2A6sz5r7eNc0zjmL6YNawHTzluXZGmE2iF9frPWZ4p9kcR1nQtCJa5iXD1j5AdfyQ-kdLYVVl7Q55GNFCe54ayCKMrqWkDVBL98PLgbXttWefV2WKqsVIxEcdTPXyx1lU-p3g49wDyuH2l2ued3MBzemwNuXJMYR1NqSTZDQNsh4yFkPQDZF9yKfBr5LsZh7EH831C-k0gKAo0m',
+  },
+  {
+    id: '2',
+    badge: 'ĐẶT LỊCH NGAY',
+    title: 'Hơn 50 bác sĩ\nchuyên khoa hô hấp',
+    cta: 'Đặt lịch khám',
+    overlay: 'rgba(5,150,105,0.85)',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_iLiX96-7KdxD4YhY0FSz0j7UjUIwRaf_hijFJXoGnoU0IKtsM5oAaEYSD5faycH9y8oNIauP5l9PXYxdsY8BgA76M9mLZJ8ee-3zNiE5svEEj9YwZ2w1qWdc7fqr3OPfkX5dkfXBaLvlobTs2n7EgUxU2vrO2z08OQ7LYxOz-yk62p01ISci48F58PYinPutu76l38sDmsdKyYvzADcFQ5Ir61f-_9CilNd2SDQQ-joUrGyreyvry5R-zRH__G7ns7a-0x5bTuPF',
+  },
+  {
+    id: '3',
+    badge: 'CÔNG NGHỆ AI',
+    title: 'Phân tích X-quang\nphổi bằng AI',
+    cta: 'Thử ngay miễn phí',
+    overlay: 'rgba(79,70,229,0.85)',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8Z35PMEKVy1oCowwCra6qNghyrapFVbSjVECe3cNKjl9gZJHbC4gWSbILWcIonzWzC2L-dgPNFoAVbfFQj8SIDoprB3jEKaqmVyP6_DkfYIAuSHJxPiThA1CjgGDL1vIkDu8l4o0VvJbY1M-7mGIRoFs5AbQiuFe9F8eVabNuGTYVUXVKT5QW0pmOXYzTKTwkDUyGpEZGa_xZ-2_an9chkmWtjg9hPXGNeXRmlFf3hHtS1ahwIv5dJKZmRNMlXphQUS7w_KvcyEMB',
+  },
+];
 
 function PromoBanner() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+  const { width } = useWindowDimensions();
+  const ITEM_WIDTH = width - 32; // px-4 on each side
+
+  const handleScroll = (e: any) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / ITEM_WIDTH);
+    setActiveIndex(idx);
+  };
+
   return (
-    <View
-      style={{
-        height: 168,
-        borderRadius: 20,
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      <Image
-        source={{
-          uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYxDTSa51LrRLJsK4BTzCss1JQTQgnOsX1g-rO51r4EYTNrOScpK4-yHLycKeck2A6sz5r7eNc0zjmL6YNawHTzluXZGmE2iF9frPWZ4p9kcR1nQtCJa5iXD1j5AdfyQ-kdLYVVl7Q55GNFCe54ayCKMrqWkDVBL98PLgbXttWefV2WKqsVIxEcdTPXyx1lU-p3g49wDyuH2l2ued3MBzemwNuXJMYR1NqSTZDQNsh4yFkPQDZF9yKfBr5LsZh7EH831C-k0gKAo0m',
-        }}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-        }}
-        resizeMode="cover"
-      />
-      {/* Gradient overlay */}
-      <View
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(10,124,255,0.85)',
-        }}
-      />
-      {/* Left green accent bar */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: 5,
-          backgroundColor: '#22C55E',
-        }}
-      />
+    <View>
+      <FlatList
+        ref={flatListRef}
+        data={BANNERS}
+        keyExtractor={(item) => item.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={ITEM_WIDTH}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        renderItem={({ item }) => (
+          <View style={{ width: ITEM_WIDTH }} className="h-44 rounded-2xl overflow-hidden relative">
+            <Image
+              source={{ uri: item.image }}
+              className="absolute inset-0 w-full h-full"
+              resizeMode="cover"
+            />
+            <View style={{ backgroundColor: item.overlay }} className="absolute inset-0" />
+            <View className="absolute top-0 bottom-0 left-0 w-1.5 bg-secondary" />
 
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          left: 20,
-          justifyContent: 'center',
-          right: 16,
-        }}
-      >
-        {/* Badge */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 10,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.25)',
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-            }}
-          >
-            <Text
-              style={{
-                color: 'white',
-                fontSize: 10,
-                fontWeight: '700',
-                letterSpacing: 0.5,
-              }}
-            >
-              CHĂM SÓC TOÀN DIỆN
-            </Text>
+            <View className="absolute top-0 bottom-0 left-5 right-4 justify-center">
+              <View className="flex-row items-center gap-2 mb-2.5">
+                <View className="bg-white/20 border border-white/25 rounded-lg px-2.5 py-1">
+                  <Text className="text-white text-[10px] font-bold tracking-wide">
+                    {item.badge}
+                  </Text>
+                </View>
+                <View className="w-2 h-2 rounded-full bg-secondary" />
+              </View>
+
+              <Text className="text-white text-xl font-bold leading-7 mb-4">
+                {item.title}
+              </Text>
+
+              <Pressable
+                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+                className="bg-secondary rounded-xl px-5 py-2.5 self-start flex-row items-center gap-1.5"
+              >
+                <Text className="text-white text-sm font-bold">{item.cta}</Text>
+                <MaterialIcons name="arrow-forward" size={16} color="white" />
+              </Pressable>
+            </View>
+
+            {/* Pagination dots */}
+            <View className="absolute bottom-3 right-4 flex-row gap-1.5">
+              {BANNERS.map((_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: i === activeIndex ? 16 : 6,
+                    height: 5,
+                    borderRadius: 3,
+                    backgroundColor: i === activeIndex ? 'white' : 'rgba(255,255,255,0.4)',
+                  }}
+                />
+              ))}
+            </View>
           </View>
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: '#22C55E',
-            }}
-          />
-        </View>
-
-        <Text
-          style={{
-            color: 'white',
-            fontSize: 20,
-            fontWeight: '700',
-            lineHeight: 26,
-            marginBottom: 16,
-          }}
-        >
-          Chăm sóc sức khỏe{'\n'}phổi toàn diện
-        </Text>
-
-        <Pressable
-          style={({ pressed }) => ({
-            backgroundColor: '#22C55E',
-            borderRadius: 12,
-            paddingHorizontal: 20,
-            paddingVertical: 10,
-            alignSelf: 'flex-start',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          <Text style={{ color: 'white', fontSize: 13, fontWeight: '700' }}>
-            Khám phá ngay
-          </Text>
-          <MaterialIcons name="arrow-forward" size={16} color="white" />
-        </Pressable>
-      </View>
-
-      {/* Pagination dots */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 12,
-          right: 16,
-          flexDirection: 'row',
-          gap: 5,
-        }}
-      >
-        <View
-          style={{
-            width: 18,
-            height: 5,
-            borderRadius: 3,
-            backgroundColor: 'white',
-          }}
-        />
-        <View
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255,255,255,0.4)',
-          }}
-        />
-        <View
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255,255,255,0.4)',
-          }}
-        />
-      </View>
+        )}
+      />
     </View>
   );
 }
 
+// ─── QuickActions ─────────────────────────────────────────────────────────────
 function QuickActions({ actions }: { actions: QuickAction[] }) {
   return (
-    <View
-      style={{
-        backgroundColor: 'white',
-        borderRadius: 24,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
-      }}
-    >
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
+    <View className="bg-white rounded-3xl p-5 shadow-sm elevation-2 border border-slate-100">
+      <View className="flex-row flex-wrap">
         {actions.map((item, idx) => (
           <View
             key={item.key}
-            style={{
-              width: '25%',
-              alignItems: 'center',
-              marginBottom: idx < actions.length - 4 ? 24 : 0,
-            }}
+            className="w-1/4 items-center"
+            style={{ marginBottom: idx < actions.length - 4 ? 24 : 0 }}
           >
             <Pressable
               onPress={item.onPress}
               style={({ pressed }) => ({
-                width: 52,
-                height: 52,
-                borderRadius: 16,
                 backgroundColor: item.bg,
-                alignItems: 'center',
-                justifyContent: 'center',
                 opacity: pressed ? 0.85 : 1,
               })}
+              className="w-14 h-14 rounded-2xl items-center justify-center"
             >
               <MaterialIcons
                 name={item.iconName as any}
@@ -505,16 +300,7 @@ function QuickActions({ actions }: { actions: QuickAction[] }) {
                 color={item.color}
               />
             </Pressable>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: '700',
-                color: '#1F2937',
-                textAlign: 'center',
-                marginTop: 8,
-                lineHeight: 13,
-              }}
-            >
+            <Text className="text-[10px] font-bold text-gray-800 text-center mt-2 leading-tight">
               {item.label}
             </Text>
           </View>
@@ -524,6 +310,7 @@ function QuickActions({ actions }: { actions: QuickAction[] }) {
   );
 }
 
+// ─── SectionHeader ────────────────────────────────────────────────────────────
 function SectionHeader({
   title,
   onSeeAll,
@@ -532,116 +319,56 @@ function SectionHeader({
   onSeeAll?: () => void;
 }) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 14,
-      }}
-    >
-      <Text style={{ fontSize: 17, fontWeight: '700', color: '#1F2937' }}>
-        {title}
-      </Text>
+    <View className="flex-row items-center justify-between mb-3.5">
+      <Text className="text-[17px] font-bold text-gray-800">{title}</Text>
       {onSeeAll && (
         <Pressable onPress={onSeeAll}>
-          <Text style={{ color: '#22C55E', fontSize: 13, fontWeight: '600' }}>
-            Xem tất cả
-          </Text>
+          <Text className="text-secondary text-sm font-semibold">Xem tất cả</Text>
         </Pressable>
       )}
     </View>
   );
 }
 
+// ─── FacilityCard ─────────────────────────────────────────────────────────────
 function FacilityCard({ item }: { item: Facility }) {
   return (
     <Pressable
-      style={({ pressed }) => ({
-        width: 152,
-        backgroundColor: 'white',
-        padding: 12,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 6,
-        elevation: 1,
-        opacity: pressed ? 0.9 : 1,
-      })}
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      className="w-[152px] bg-white p-3 rounded-[18px] border border-slate-100 shadow-sm elevation-1"
     >
-      <View
-        style={{
-          width: 96,
-          height: 96,
-          borderRadius: 12,
-          backgroundColor: '#F8FAFC',
-          overflow: 'hidden',
-          alignSelf: 'center',
-          marginBottom: 10,
-        }}
-      >
+      <View className="w-24 h-24 rounded-xl bg-slate-50 overflow-hidden self-center mb-2.5">
         <Image
           source={{ uri: item.logo }}
-          style={{ width: '100%', height: '100%' }}
+          className="w-full h-full"
           resizeMode="cover"
         />
       </View>
       <Text
-        style={{
-          fontSize: 13,
-          fontWeight: '700',
-          color: '#1F2937',
-          lineHeight: 18,
-        }}
+        className="text-sm font-bold text-gray-800 leading-[18px]"
         numberOfLines={2}
       >
         {item.name}
       </Text>
-      <Text
-        style={{
-          fontSize: 11,
-          color: '#6B7280',
-          marginTop: 4,
-          marginBottom: 6,
-        }}
-        numberOfLines={1}
-      >
+      <Text className="text-[11px] text-gray-500 mt-1 mb-1.5" numberOfLines={1}>
         {item.address}
       </Text>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 'auto',
-        }}
-      >
+      <View className="flex-row items-center justify-between mt-auto">
         <View
-          style={{
-            backgroundColor: item.typeBg,
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-          }}
+          style={{ backgroundColor: item.typeBg }}
+          className="rounded-md px-1.5 py-0.5"
         >
-          <Text
-            style={{ fontSize: 9, color: item.typeColor, fontWeight: '600' }}
-          >
+          <Text style={{ color: item.typeColor }} className="text-[9px] font-semibold">
             {item.type}
           </Text>
         </View>
-        {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <MaterialIcons name="near-me" size={10} color="#94A3B8" />
-          <Text style={{ fontSize: 9, color: '#94A3B8' }}>{item.distance}</Text>
-        </View> */}
       </View>
     </Pressable>
   );
 }
 
+// ─── Static news data ─────────────────────────────────────────────────────────
 const today = new Date().toLocaleDateString('vi-VN');
 
 const NEWS: NewsItem[] = [
@@ -669,79 +396,37 @@ const NEWS: NewsItem[] = [
   },
 ];
 
+// ─── SpecialtyGrid ────────────────────────────────────────────────────────────
 function SpecialtyGrid({ items }: { items: string[] }) {
   const getSpecialtyConfig = (specialty: string) => {
     switch (specialty) {
       case 'Pulmonology':
-        return {
-          label: 'Hô hấp',
-          icon: 'lungs',
-          color: '#0A7CFF',
-          bg: '#EFF6FF',
-        };
+        return { label: 'Hô hấp', icon: 'lungs', color: theme.colors.primary, bg: '#EFF6FF' };
       case 'Thoracic Surgery':
-        return {
-          label: 'Phẫu thuật lồng ngực',
-          icon: 'heart-pulse',
-          color: '#22C55E',
-          bg: '#F0FDF4',
-        };
+        return { label: 'Phẫu thuật lồng ngực', icon: 'heart-pulse', color: theme.colors.secondary, bg: '#F0FDF4' };
       case 'Respiratory Medicine':
-        return {
-          label: 'Nội khoa hô hấp',
-          icon: 'stethoscope',
-          color: '#4F46E5',
-          bg: '#EEF2FF',
-        };
+        return { label: 'Nội khoa hô hấp', icon: 'stethoscope', color: '#4F46E5', bg: '#EEF2FF' };
       case 'Tuberculosis':
-        return {
-          label: 'Lao phổi',
-          icon: 'virus',
-          color: '#EF4444',
-          bg: '#FEF2F2',
-        };
+        return { label: 'Lao phổi', icon: 'virus', color: '#EF4444', bg: '#FEF2F2' };
       default:
-        return {
-          label: specialty,
-          icon: 'medical-bag',
-          color: '#6B7280',
-          bg: '#F3F4F6',
-        };
+        return { label: specialty, icon: 'medical-bag', color: '#6B7280', bg: '#F3F4F6' };
     }
   };
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+    <View className="flex-row flex-wrap gap-4">
       {items.slice(0, 4).map((s) => {
         const { label, icon, color, bg } = getSpecialtyConfig(s);
         return (
-          <Pressable
-            key={s}
-            style={{ alignItems: 'center', gap: 6, width: 64 }}
-          >
+          <Pressable key={s} className="items-center gap-1.5 w-16">
             <View
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 16,
-                backgroundColor: bg,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={{ backgroundColor: bg }}
+              className="w-14 h-14 rounded-2xl items-center justify-center"
             >
-              <MaterialCommunityIcons
-                name={icon as any}
-                size={34}
-                color={color}
-              />
+              <MaterialCommunityIcons name={icon as any} size={34} color={color} />
             </View>
             <Text
-              style={{
-                fontSize: 10,
-                fontWeight: '500',
-                color: '#6B7280',
-                textAlign: 'center',
-              }}
+              className="text-[10px] font-medium text-gray-500 text-center"
               numberOfLines={2}
             >
               {label}
@@ -753,63 +438,35 @@ function SpecialtyGrid({ items }: { items: string[] }) {
   );
 }
 
+// ─── NewsCard ─────────────────────────────────────────────────────────────────
 function NewsCard({ item }: { item: NewsItem }) {
   return (
     <Pressable
-      style={({ pressed }) => ({
-        width: 240,
-        backgroundColor: 'white',
-        borderRadius: 20,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 1,
-        opacity: pressed ? 0.9 : 1,
-      })}
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      className="w-60 bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm elevation-1"
     >
-      <View style={{ height: 130, position: 'relative', overflow: 'hidden', borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+      <View className="h-32 relative overflow-hidden rounded-t-[18px]">
         <Image
           source={{ uri: item.image }}
-          style={{ width: '100%', height: '100%' }}
+          className="w-full h-full"
           resizeMode="cover"
         />
         {item.badge && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              backgroundColor: 'rgba(10,124,255,0.9)',
-              borderRadius: 8,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>
-              {item.badge}
-            </Text>
+          <View className="absolute top-2 left-2 bg-blue-600/90 rounded-lg px-2 py-1">
+            <Text className="text-white text-[10px] font-bold">{item.badge}</Text>
           </View>
         )}
       </View>
-      <View style={{ padding: 14 }}>
+      <View className="p-3.5">
         <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '700',
-            color: '#1F2937',
-            lineHeight: 18,
-            marginBottom: 8,
-          }}
+          className="text-sm font-bold text-gray-800 leading-[18px] mb-2"
           numberOfLines={2}
         >
           {item.title}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <View className="flex-row items-center gap-1">
           <MaterialIcons name="calendar-today" size={13} color="#94A3B8" />
-          <Text style={{ fontSize: 11, color: '#94A3B8' }}>{item.date}</Text>
+          <Text className="text-[11px] text-slate-400">{item.date}</Text>
         </View>
       </View>
     </Pressable>
@@ -817,7 +474,6 @@ function NewsCard({ item }: { item: NewsItem }) {
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-
 export function HomeScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -831,7 +487,7 @@ export function HomeScreen() {
       label: 'Đặt khám\nbác sĩ',
       iconName: 'person-search',
       iconLib: 'material',
-      color: '#0A7CFF',
+      color: theme.colors.primary,
       bg: '#EFF6FF',
       onPress: () => router.push('/doctors'),
     },
@@ -840,7 +496,7 @@ export function HomeScreen() {
       label: 'Phòng\nkhám',
       iconName: 'local-hospital',
       iconLib: 'material',
-      color: '#22C55E',
+      color: theme.colors.secondary,
       bg: '#F0FDF4',
       onPress: () => router.push('/doctors'),
     },
@@ -849,7 +505,7 @@ export function HomeScreen() {
       label: 'Bệnh\nviện',
       iconName: 'apartment',
       iconLib: 'material',
-      color: '#0A7CFF',
+      color: theme.colors.primary,
       bg: '#EFF6FF',
       onPress: () => router.push('/doctors'),
     },
@@ -867,7 +523,7 @@ export function HomeScreen() {
       label: 'Chat\nbác sĩ',
       iconName: 'chat-bubble',
       iconLib: 'material',
-      color: '#22C55E',
+      color: theme.colors.secondary,
       bg: '#F0FDF4',
       onPress: () => router.push('/(tabs)/notifications'),
     },
@@ -876,7 +532,7 @@ export function HomeScreen() {
       label: 'Video\ncall',
       iconName: 'videocam',
       iconLib: 'material',
-      color: '#0A7CFF',
+      color: theme.colors.primary,
       bg: '#EFF6FF',
       onPress: () => router.push('/doctors'),
     },
@@ -885,7 +541,7 @@ export function HomeScreen() {
       label: 'Hồ sơ\nsức khỏe',
       iconName: 'assignment',
       iconLib: 'material',
-      color: '#22C55E',
+      color: theme.colors.secondary,
       bg: '#F0FDF4',
       onPress: () => router.push('/medical-records'),
     },
@@ -894,7 +550,7 @@ export function HomeScreen() {
       label: 'Tin\ntức',
       iconName: 'article',
       iconLib: 'material',
-      color: '#0A7CFF',
+      color: theme.colors.primary,
       bg: '#EFF6FF',
       onPress: () => router.push('/settings'),
     },
@@ -903,24 +559,9 @@ export function HomeScreen() {
   if (doctorsQuery.isLoading) return <Loading label="Đang tải..." />;
   if (doctorsQuery.isError) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#F8FAFC',
-          paddingHorizontal: 24,
-        }}
-      >
+      <View className="flex-1 items-center justify-center bg-slate-50 px-6">
         <MaterialIcons name="wifi-off" size={48} color="#CBD5E1" />
-        <Text
-          style={{
-            color: '#94A3B8',
-            fontSize: 14,
-            marginTop: 12,
-            textAlign: 'center',
-          }}
-        >
+        <Text className="text-slate-400 text-sm mt-3 text-center">
           Không thể tải dữ liệu. Vui lòng thử lại sau.
         </Text>
       </View>
@@ -931,13 +572,13 @@ export function HomeScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+      className="flex-1 bg-slate-50"
       showsVerticalScrollIndicator={false}
     >
       {/* ── Header ── */}
       <Header />
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 44, gap: 24 }}>
+      <View className="px-4 pt-11 gap-6">
         {/* ── Promo Banner ── */}
         <PromoBanner />
 
@@ -951,11 +592,9 @@ export function HomeScreen() {
             onSeeAll={() => router.push('/doctors')}
           />
           {doctors.length === 0 ? (
-            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+            <View className="py-5 items-center">
               <MaterialIcons name="person-search" size={36} color="#CBD5E1" />
-              <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
-                Chưa có dữ liệu bác sĩ
-              </Text>
+              <Text className="text-slate-400 text-sm mt-2">Chưa có dữ liệu bác sĩ</Text>
             </View>
           ) : (
             <FlatList
@@ -967,76 +606,27 @@ export function HomeScreen() {
               renderItem={({ item: doctor }) => (
                 <Pressable
                   onPress={() => router.push(`/doctors/${doctor.id}`)}
-                  style={({ pressed }) => ({
-                    width: 152,
-                    backgroundColor: 'white',
-                    padding: 12,
-                    borderRadius: 18,
-                    borderWidth: 1,
-                    borderColor: '#F1F5F9',
-                    shadowColor: '#000',
-                    shadowOpacity: 0.04,
-                    shadowRadius: 6,
-                    elevation: 1,
-                    opacity: pressed ? 0.9 : 1,
-                  })}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+                  className="w-[152px] bg-white p-3 rounded-[18px] border border-slate-100 shadow-sm elevation-1"
                 >
-                  <DoctorAvatar
-                    avatarUrl={doctor.avatarUrl}
-                    name={doctor.fullName}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '700',
-                      color: '#1F2937',
-                    }}
-                    numberOfLines={1}
-                  >
+                  <DoctorAvatar avatarUrl={doctor.avatarUrl} name={doctor.fullName} />
+                  <Text className="text-sm font-bold text-gray-800" numberOfLines={1}>
                     {doctor.fullName || 'Bác sĩ'}
                   </Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: '#6B7280',
-                      marginTop: 2,
-                      marginBottom: 4,
-                    }}
-                    numberOfLines={1}
-                  >
+                  <Text className="text-[11px] text-gray-500 mt-0.5 mb-1" numberOfLines={1}>
                     {doctor.specialty || 'Hô hấp'}
                   </Text>
                   {!!doctor.yearsOfExperience && (
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        color: '#94A3B8',
-                        marginBottom: 4,
-                      }}
-                    >
+                    <Text className="text-[10px] text-slate-400 mb-1">
                       {doctor.yearsOfExperience} năm KN
                     </Text>
                   )}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
+                  <View className="flex-row items-center gap-1">
                     <MaterialIcons name="star" size={14} color="#FBBF24" />
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: '700',
-                        color: '#1F2937',
-                      }}
-                    >
-                      {parseFloat((doctor as any).averageRating ?? '0').toFixed(
-                        1,
-                      )}
+                    <Text className="text-xs font-bold text-gray-800">
+                      {parseFloat((doctor as any).averageRating ?? '0').toFixed(1)}
                     </Text>
-                    <Text style={{ fontSize: 10, color: '#94A3B8' }}>
+                    <Text className="text-[10px] text-slate-400">
                       ({(doctor as any).totalReviews ?? 0})
                     </Text>
                   </View>
@@ -1053,19 +643,13 @@ export function HomeScreen() {
             onSeeAll={() => router.push('/hospitals' as any)}
           />
           {hospitalsQuery.isLoading ? (
-            <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
-              Đang tải dữ liệu...
-            </Text>
+            <Text className="text-slate-400 text-sm mt-2">Đang tải dữ liệu...</Text>
           ) : hospitalsQuery.isError ? (
-            <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
-              Không thể tải dữ liệu cơ sở y tế
-            </Text>
+            <Text className="text-slate-400 text-sm mt-2">Không thể tải dữ liệu cơ sở y tế</Text>
           ) : !hospitalsQuery.data?.items?.length ? (
-            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+            <View className="py-5 items-center">
               <MaterialIcons name="apartment" size={36} color="#CBD5E1" />
-              <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
-                Chưa có dữ liệu cơ sở y tế
-              </Text>
+              <Text className="text-slate-400 text-sm mt-2">Chưa có dữ liệu cơ sở y tế</Text>
             </View>
           ) : (
             <FlatList
@@ -1085,10 +669,8 @@ export function HomeScreen() {
                       address: h.address,
                       type: isClinic ? 'Phòng khám' : 'Bệnh viện',
                       distance: '2.5 km',
-                      logo:
-                        h.logoUrl ||
-                        'https://cdn-icons-png.flaticon.com/512/3063/3063206.png',
-                      typeColor: isClinic ? '#22C55E' : '#0A7CFF',
+                      logo: h.logoUrl || 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png',
+                      typeColor: isClinic ? theme.colors.secondary : theme.colors.primary,
                       typeBg: isClinic ? '#F0FDF4' : '#EFF6FF',
                     }}
                   />
@@ -1105,16 +687,14 @@ export function HomeScreen() {
             onSeeAll={() => router.push('/specialties' as any)}
           />
           {specialtiesQuery.isLoading ? (
-            <Text style={{ color: '#94A3B8', fontSize: 13, marginTop: 8 }}>
-              Đang tải...
-            </Text>
+            <Text className="text-slate-400 text-sm mt-2">Đang tải...</Text>
           ) : (
             <SpecialtyGrid items={specialtiesQuery.data || []} />
           )}
         </View>
 
         {/* ── Medical News ── */}
-        <View style={{ paddingBottom: 32 }}>
+        <View className="pb-8">
           <SectionHeader
             title="Tin tức y khoa"
             onSeeAll={() => router.push('/news' as any)}
