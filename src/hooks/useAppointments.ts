@@ -14,6 +14,8 @@ const appointmentKeys = {
   doctors: (params?: Record<string, unknown>) => ['doctors', 'public', params] as const,
   doctorDetail: (doctorId: string) => ['doctors', 'detail', doctorId] as const,
   doctorSlots: (doctorId: string, date: string) => ['doctors', 'slots', doctorId, date] as const,
+  doctorSlotSummary: (doctorId: string, from: string, to: string) =>
+    ['doctors', 'slots', 'summary', doctorId, from, to] as const,
   specialties: () => ['doctors', 'specialties'] as const,
 };
 
@@ -67,6 +69,14 @@ export function useDoctorAvailableSlots(doctorId: string, date: string) {
     queryKey: appointmentKeys.doctorSlots(doctorId, date),
     queryFn: () => appointmentService.getDoctorAvailableTimeSlots(doctorId, date),
     enabled: Boolean(doctorId && date),
+  });
+}
+
+export function useDoctorTimeSlotSummary(doctorId: string, from: string, to: string) {
+  return useQuery({
+    queryKey: appointmentKeys.doctorSlotSummary(doctorId, from, to),
+    queryFn: () => appointmentService.getDoctorTimeSlotSummary(doctorId, { from, to }),
+    enabled: Boolean(doctorId && from && to),
   });
 }
 

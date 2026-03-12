@@ -4,12 +4,16 @@ export const theme = {
     primaryAlt: '#007AFF',
     primaryDark: '#005ECB',
     secondary: '#22C55E',
-    background: '#F5F7F8',
+    background: '#F8FAFC',
+    backgroundDark: '#18181B',
     surface: '#FFFFFF',
+    surfaceDark: '#27272A',
     textPrimary: '#1F2937',
+    textPrimaryDark: '#E5E7EB',
     textSecondary: '#6B7280',
     textMuted: '#94A3B8',
     border: '#E2E8F0',
+    borderDark: '#3F3F46',
     danger: '#EF4444',
     warning: '#F59E0B',
     info: '#0A7CFF',
@@ -58,5 +62,24 @@ export const theme = {
 } as const;
 
 export type AppTheme = typeof theme;
+
+export const Colors = {
+  light: {
+    text: theme.colors.textPrimary,
+    background: theme.colors.background,
+    tint: theme.colors.primary,
+    icon: theme.colors.textSecondary,
+    tabIconDefault: theme.colors.textMuted,
+    tabIconSelected: theme.colors.primary,
+  },
+  dark: {
+    text: theme.colors.textPrimaryDark,
+    background: theme.colors.backgroundDark,
+    tint: theme.colors.primary,
+    icon: '#9BA1A6',
+    tabIconDefault: '#9BA1A6',
+    tabIconSelected: theme.colors.primary,
+  },
+} as const;
 
 export default theme;
