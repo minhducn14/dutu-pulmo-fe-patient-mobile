@@ -1,37 +1,210 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { useAppointments } from '@/hooks/useAppointments';
 
-const statusToVariant: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
-  CONFIRMED: 'info',
-  COMPLETED: 'success',
-  CANCELLED: 'error',
-  PENDING: 'warning',
-  CHECKED_IN: 'info',
-  IN_PROGRESS: 'info',
-  RESCHEDULED: 'warning',
-  PENDING_PAYMENT: 'warning',
+// ─── Status config (đồng bộ với AppointmentDetailScreen) ─────────────────────
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string;
+    icon: string;
+    color: string;
+    bgClass: string;
+    borderClass: string;
+    textClass: string;
+  }
+> = {
+  CONFIRMED: {
+    label: 'Đã đặt lịch',
+    icon: 'check-circle',
+    color: '#16a34a',
+    bgClass: 'bg-green-50',
+    borderClass: 'border-green-200',
+    textClass: 'text-green-700',
+  },
+  PENDING: {
+    label: 'Chờ xác nhận',
+    icon: 'schedule',
+    color: '#d97706',
+    bgClass: 'bg-amber-50',
+    borderClass: 'border-amber-200',
+    textClass: 'text-amber-700',
+  },
+  PENDING_PAYMENT: {
+    label: 'Chờ thanh toán',
+    icon: 'payment',
+    color: '#d97706',
+    bgClass: 'bg-amber-50',
+    borderClass: 'border-amber-200',
+    textClass: 'text-amber-700',
+  },
+  COMPLETED: {
+    label: 'Đã hoàn thành',
+    icon: 'done-all',
+    color: '#0A7CFF',
+    bgClass: 'bg-blue-50',
+    borderClass: 'border-blue-200',
+    textClass: 'text-blue-600',
+  },
+  CANCELLED: {
+    label: 'Đã hủy lịch',
+    icon: 'cancel',
+    color: '#ef4444',
+    bgClass: 'bg-red-50',
+    borderClass: 'border-red-200',
+    textClass: 'text-red-500',
+  },
+  CHECKED_IN: {
+    label: 'Đã check-in',
+    icon: 'how-to-reg',
+    color: '#0A7CFF',
+    bgClass: 'bg-blue-50',
+    borderClass: 'border-blue-200',
+    textClass: 'text-blue-600',
+  },
+  IN_PROGRESS: {
+    label: 'Đang khám',
+    icon: 'medical-services',
+    color: '#0A7CFF',
+    bgClass: 'bg-blue-50',
+    borderClass: 'border-blue-200',
+    textClass: 'text-blue-600',
+  },
+  RESCHEDULED: {
+    label: 'Đã đổi lịch',
+    icon: 'event-repeat',
+    color: '#d97706',
+    bgClass: 'bg-amber-50',
+    borderClass: 'border-amber-200',
+    textClass: 'text-amber-700',
+  },
 };
 
+const FALLBACK_STATUS = STATUS_CONFIG['PENDING'];
+
+// ─── Appointment card ─────────────────────────────────────────────────────────
+function AppointmentCard({
+  appointment,
+  onPress,
+}: {
+  appointment: any;
+  onPress: () => void;
+}) {
+  const statusConfig = STATUS_CONFIG[appointment.status] ?? FALLBACK_STATUS;
+  const isCancelled = appointment.status === 'CANCELLED';
+  const scheduledDate = new Date(appointment.scheduledAt);
+  const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      className="overflow-hidden rounded-2xl bg-white"
+      style={{
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 3,
+      }}
+    >
+      {/* Card header: status + date */}
+      <View className="flex-row items-center justify-between border-b border-slate-50 px-4 pb-3 pt-4">
+        {/* Status badge */}
+        <View
+          className={`flex-row items-center gap-1.5 ${statusConfig.bgClass} border ${statusConfig.borderClass} rounded-lg px-3 py-1.5`}
+        >
+          <MaterialIcons
+            name={statusConfig.icon as any}
+            size={14}
+            color={statusConfig.color}
+          />
+          <Text className={`text-xs font-semibold ${statusConfig.textClass}`}>
+            {statusConfig.label}
+          </Text>
+        </View>
+
+        {/* Date chip */}
+        <View className="rounded-lg bg-slate-50 px-3 py-1.5">
+          <Text className="text-xs font-semibold text-slate-500">
+            {`${weekdays[scheduledDate.getDay()]}, ${scheduledDate.toLocaleDateString('vi-VN')}`}
+          </Text>
+        </View>
+      </View>
+
+      {/* Doctor info */}
+      <View className="flex-row items-center gap-3 px-4 py-3">
+        <View className="h-12 w-12 overflow-hidden rounded-full bg-blue-100">
+          {appointment.doctor?.avatarUrl ? (
+            <Image
+              source={{ uri: appointment.doctor.avatarUrl }}
+              className="h-12 w-12"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <MaterialIcons name="person" size={24} color="#60a5fa" />
+            </View>
+          )}
+        </View>
+
+        <View className="flex-1">
+          <Text
+            className="text-[15px] font-bold uppercase text-slate-900"
+            numberOfLines={1}
+          >
+            {appointment.doctor?.fullName ?? 'Bác sĩ'}
+          </Text>
+          <Text className="mt-0.5 text-xs text-slate-500" numberOfLines={1}>
+            {appointment.doctor?.specialty ?? 'Chuyên khoa'}
+          </Text>
+          <Text className="mt-0.5 text-xs text-slate-400">
+            {scheduledDate.toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+
+        <MaterialIcons name="chevron-right" size={20} color="#cbd5e1" />
+      </View>
+
+      {/* Appointment number footer */}
+      <View className="flex-row items-center justify-between px-4 pb-3">
+        <Text className="text-[11px] text-slate-400">
+          Mã phiếu:{' '}
+          <Text className="font-semibold text-slate-500">
+            {appointment.appointmentNumber ?? '—'}
+          </Text>
+        </Text>
+
+        {isCancelled && (
+          <Text className="text-[11px] font-medium text-red-400">Đã huỷ lịch</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 export function MyAppointmentsScreen() {
   const router = useRouter();
   const appointmentsQuery = useAppointments();
 
   if (appointmentsQuery.isLoading) {
-    return <Loading label="Loading appointments..." />;
+    return <Loading label="Đang tải lịch khám..." />;
   }
 
   if (appointmentsQuery.isError) {
     return (
-      <View className="flex-1 items-center justify-center bg-background-light px-6">
-        <EmptyState title="Unable to load appointments" description="Please try again later." />
+      <View className="flex-1 items-center justify-center bg-slate-50 px-6">
+        <EmptyState
+          title="Không thể tải lịch khám"
+          description="Vui lòng thử lại sau."
+        />
       </View>
     );
   }
@@ -39,41 +212,95 @@ export function MyAppointmentsScreen() {
   const appointments = appointmentsQuery.data?.items ?? [];
 
   return (
-    <ScrollView className="flex-1 bg-background-light" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <Text className="text-2xl font-bold text-slate-900">Appointments</Text>
-
-      <View className="mt-4 gap-3">
-        {appointments.length === 0 ? (
-          <EmptyState title="No appointments yet" description="Book a doctor to get started." />
-        ) : (
-          appointments.map((appointment) => (
-            <Card key={appointment.id}>
-              <View className="flex-row items-center justify-between">
-                <Badge
-                  label={appointment.status}
-                  variant={statusToVariant[appointment.status] || 'neutral'}
-                />
-                <Avatar uri={appointment.doctor.avatarUrl} size={42} />
-              </View>
-
-              <Text className="mt-3 text-base font-bold text-slate-900">
-                {appointment.doctor.fullName || 'Doctor'}
-              </Text>
-              <Text className="mt-1 text-sm text-slate-600">{appointment.doctor.specialty || 'Specialist'}</Text>
-              <Text className="mt-1 text-xs text-slate-500">
-                {new Date(appointment.scheduledAt).toLocaleString()}
-              </Text>
-
-              <View className="mt-3">
-                <Button title="View details" onPress={() => router.push(`/appointments/${appointment.id}`)} />
-              </View>
-            </Card>
-          ))
-        )}
+    <View className="flex-1 bg-slate-50">
+      {/* HEADER */}
+      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          className="rounded-full p-1"
+        >
+          <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
+        </TouchableOpacity>
+        <Text className="text-lg font-bold text-white">Lịch khám của tôi</Text>
+        {/* placeholder để căn giữa title */}
+        <View className="w-8" />
       </View>
-    </ScrollView>
+
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="p-4 pb-8"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Summary row */}
+        {appointments.length > 0 && (
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-sm text-slate-500">
+              Tổng cộng{' '}
+              <Text className="font-bold text-slate-900">
+                {appointments.length}
+              </Text>{' '}
+              lịch khám
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push('/doctors')}
+              className="flex-row items-center gap-1"
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="add" size={16} color="#0A7CFF" />
+              <Text className="text-sm font-medium text-blue-500">
+                Đặt lịch mới
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* List */}
+        <View className="gap-3">
+          {appointments.length === 0 ? (
+            <View className="mt-16 items-center">
+              <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-blue-50">
+                <MaterialIcons
+                  name="calendar-today"
+                  size={36}
+                  color="#93c5fd"
+                />
+              </View>
+              <Text className="text-base font-bold text-slate-700">
+                Chưa có lịch khám
+              </Text>
+              <Text className="mt-1 text-center text-sm text-slate-400">
+                Hãy đặt lịch với bác sĩ để bắt đầu
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/doctors')}
+                activeOpacity={0.85}
+                className="mt-6 flex-row items-center gap-2 rounded-2xl bg-blue-500 px-8 py-3"
+                style={{
+                  shadowColor: '#0A7CFF',
+                  shadowOpacity: 0.3,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <MaterialIcons name="search" size={18} color="white" />
+                <Text className="text-sm font-bold text-white">Tìm bác sĩ</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            appointments.map((appointment) => (
+              <AppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                onPress={() => router.push(`/appointments/${appointment.id}`)}
+              />
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 export default MyAppointmentsScreen;
-
