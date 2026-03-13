@@ -1,16 +1,8 @@
-/**
- * BookAppointmentScreen
- * – Doctor card: usePublicDoctorDetail
- * – Patient info: useMe() → GET /users/me (fullName, gender, dateOfBirth, phone)
- * – Pre-select slot từ DoctorDetailScreen (param slotId)
- * – Additional info: RichEditor (react-native-pell-rich-editor)
- */
-
 import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Image,
@@ -26,69 +18,46 @@ import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor'
 import { z } from 'zod';
 
 import { Loading } from '@/components/ui/Loading';
+import { DatePicker } from '@/components/doctor/DatePicker';
+import type { DateItem } from '@/components/doctor/DatePicker';
+import { TimeSlotGrid } from '@/components/doctor/TimeSlotGrid';
+import type { TimeSlot } from '@/components/doctor/TimeSlotGrid';
+import { SectionLabel } from '@/components/doctor/SectionLabel';
+import { StepBar } from '@/components/appointment/StepBar';
+import { InfoRowHorizontal } from '@/components/appointment/InfoRowHorizontal';
 import {
-  useCreateAppointment,
+  buildDateWindow,
+  formatDate,
+  genderLabel,
+  toLocalDateString,
+  toTimeSlots,
+} from '@/utils/appointment-helpers';
+import {
   useDoctorAvailableSlots,
+  useDoctorTimeSlotSummary,
   usePublicDoctorDetail,
 } from '@/hooks/useAppointments';
-import { useMe } from '@/hooks/useMe';
+import { useProfile } from '@/hooks/useProfile';
+import { useBookingStore } from '@/store/booking.store';
 import { useAuthStore } from '@/store/auth.store';
 import { getDoctorTitleLabel, getSpecialtyLabel } from '@/utils/doctor-display';
 
-// ─── Schema ────────────────────────────────────────────────────────────────────
 const schema = z.object({
   chiefComplaint: z.string().optional(),
   symptoms: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
-const today = new Date().toISOString().slice(0, 10);
+const BASE_DATES = buildDateWindow();
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-function formatLocalTime(utcStr: string): string {
-  const d = new Date(utcStr);
-  return d.toLocaleTimeString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatDate(value?: string | null): string {
-  if (!value) return '—';
-  // Handle 'YYYY-MM-DD' or ISO
-  const d = new Date(value.length === 10 ? `${value}T00:00:00` : value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('vi-VN');
-}
-
-function genderLabel(gender?: string | null): string {
-  if (!gender) return '—';
-  const map: Record<string, string> = {
-    MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác',
-  };
-  return map[gender] ?? gender;
-}
-
-// ─── Sub-components ────────────────────────────────────────────────────────────
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
-      <Text style={{ fontSize: 14, color: '#6b7280' }}>{label}</Text>
-      <Text style={{ fontSize: 14, fontWeight: '500', color: '#1e293b', flexShrink: 0, marginLeft: 16, textAlign: 'right', maxWidth: '60%' }}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
+// ─── Local sub-components ─────────────────────────────────────────────────────
 function Divider() {
-  return <View style={{ height: 1, backgroundColor: '#f3f4f6' }} />;
+  return <View className="h-px bg-gray-100" />;
 }
 
 function TimelineDot({ icon, color = '#0A7CFF' }: { icon: string; color?: string }) {
   return (
-    <View style={{ position: 'absolute', left: -33, top: 0, backgroundColor: '#EFF6FF', padding: 4 }}>
+    <View className="absolute -left-[33px] top-0 bg-blue-50 p-1">
       <MaterialIcons name={icon as any} size={20} color={color} />
     </View>
   );
@@ -99,373 +68,335 @@ export function BookAppointmentScreen() {
   const router = useRouter();
   const {
     doctorId,
-    date = today,
+    date: paramDate,
     slotId: preSelectedSlotId,
-  } = useLocalSearchParams<{ doctorId: string; date: string; slotId?: string }>();
+  } = useLocalSearchParams<{ doctorId: string; date?: string; slotId?: string }>();
 
   const user = useAuthStore((s) => s.user);
+  const setDraft = useBookingStore((s) => s.setDraft);
 
-  // ── Queries
-  const meQuery        = useMe();                            // GET /users/me
-  const doctorQuery    = usePublicDoctorDetail(doctorId ?? '');
-  const slotsQuery     = useDoctorAvailableSlots(doctorId, date);
-  const createMutation = useCreateAppointment();
+  const meQuery = useProfile();
+  const doctorQuery = usePublicDoctorDetail(doctorId ?? '');
 
-  // ── Local state
-  const [selectedSlotId, setSelectedSlotId]       = useState<string | null>(preSelectedSlotId ?? null);
+  // ── Date state — có thể thay đổi trong màn hình ───────────────────────────
+  const [selectedDate, setSelectedDate] = useState(
+    paramDate ?? BASE_DATES[0]?.date ?? toLocalDateString(new Date()),
+  );
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(preSelectedSlotId ?? null);
+
+  // Reset slot khi đổi ngày
+  useEffect(() => {
+    setSelectedSlotId(null);
+  }, [selectedDate]);
+
+  const slotsQuery = useDoctorAvailableSlots(doctorId, selectedDate);
+  const summaryQuery = useDoctorTimeSlotSummary(
+    doctorId ?? '',
+    BASE_DATES[0]?.date ?? selectedDate,
+    BASE_DATES[BASE_DATES.length - 1]?.date ?? selectedDate,
+  );
+
+  // Merge slot counts vào date window
+  const summaryMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const item of summaryQuery.data ?? []) {
+      m.set(item.date, item.count);
+    }
+    return m;
+  }, [summaryQuery.data]);
+
+  const weekDates = useMemo(
+    () => BASE_DATES.map((d) => ({ ...d, slots: summaryMap.get(d.date) ?? 0 })),
+    [summaryMap],
+  );
+
+  // Convert + group slots
+  const timeSlots = useMemo(() => toTimeSlots(slotsQuery.data ?? []), [slotsQuery.data]);
+  const morning = useMemo(() => timeSlots.filter((s) => s.period === 'morning'), [timeSlots]);
+  const afternoon = useMemo(() => timeSlots.filter((s) => s.period === 'afternoon'), [timeSlots]);
+  const selectedSlot = useMemo(() => timeSlots.find((s) => s.id === selectedSlotId) ?? null, [timeSlots, selectedSlotId]);
+  const selectedLabel = selectedSlot?.label ?? null;
+
+  // ── Additional info form ──────────────────────────────────────────────────
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
-  const [patientNotesHtml, setPatientNotesHtml]     = useState('');
+  const [patientNotesHtml, setPatientNotesHtml] = useState('');
   const richEditorRef = useRef<RichEditor>(null);
-
-  // Đếm ảnh base64 — giới hạn 5 ảnh như backend (giống website)
   const base64ImageCount = (patientNotesHtml.match(/data:image\//gi) ?? []).length;
-
-  // Chiều cao động của RichEditor — tự giãn theo nội dung thay vì scroll nội bộ
   const [editorHeight, setEditorHeight] = useState(140);
 
-  // Xử lý chèn ảnh từ thư viện — cần handle thủ công vì RichToolbar không tự mở picker
   const handleInsertImage = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
       quality: 0.7,
-      base64: true,         // lấy base64 để nhúng inline vào HTML
+      base64: true,
     });
-
     if (result.canceled || !result.assets?.[0]) return;
-
     const asset = result.assets[0];
-    const mimeType = asset.mimeType ?? 'image/jpeg';
-    const b64 = asset.base64;
-
-    if (!b64) return;
-
-    const dataUri = `data:${mimeType};base64,${b64}`;
+    const dataUri = `data:${asset.mimeType ?? 'image/jpeg'};base64,${asset.base64}`;
     richEditorRef.current?.insertImage(dataUri, 'max-width:100%;border-radius:8px;');
   }, []);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { chiefComplaint: '', symptoms: '' },
   });
 
-  // ── Derived
-  const me             = meQuery.data;
-  const slots          = slotsQuery.data ?? [];
-  const selectedSlot   = slots.find((s) => s.id === selectedSlotId) ?? null;
-  const selectedLabel  = selectedSlot
-    ? `${formatLocalTime(selectedSlot.startTime)} - ${formatLocalTime(selectedSlot.endTime)}`
-    : null;
-
-  const doctor         = doctorQuery.data;
-  const titleLabel     = doctor ? getDoctorTitleLabel(doctor.title) : '';
+  // ── Computed display values ───────────────────────────────────────────────
+  const me = meQuery.data;
+  const doctor = doctorQuery.data;
+  const titleLabel = doctor ? getDoctorTitleLabel(doctor.title) : '';
   const specialtyLabel = doctor ? getSpecialtyLabel(doctor.specialty ?? '') : '';
-
-  // Patient display — ưu tiên /users/me, fallback authStore
-  const displayName    = me?.patient?.user?.fullName ?? user?.fullName ?? '—';
-  const displayGender  = genderLabel(me?.patient?.user?.gender);
-  const displayDOB     = formatDate(me?.patient?.user?.dateOfBirth);
-  const displayPhone   = me?.patient?.user?.phone ?? '—';
-  const avatarUrl      = me?.patient?.user?.avatarUrl  ?? user?.avatarUrl;
+  const displayName = me?.patient?.user?.fullName ?? user?.fullName ?? '—';
+  const displayGender = genderLabel(me?.patient?.user?.gender);
+  const displayDOB = formatDate(me?.patient?.user?.dateOfBirth);
+  const displayPhone = me?.patient?.user?.phone ?? '—';
+  const avatarUrl = me?.patient?.user?.avatarUrl ?? user?.avatarUrl;
 
   const onSubmit = (values: FormData) => {
-    if (!selectedSlotId) return;
-    createMutation.mutate(
-      {
-        timeSlotId:     selectedSlotId,
-        chiefComplaint: values.chiefComplaint?.trim() || undefined,
-        symptoms: values.symptoms
-          ? values.symptoms.split(',').map((i) => i.trim()).filter(Boolean)
-          : undefined,
-        patientNotes: patientNotesHtml || undefined,
-      },
-      {
-        onSuccess: (appointment) => router.replace(`/appointments/${appointment.id}`),
-      },
-    );
+    if (!selectedSlotId || !selectedSlot) return;
+    const localHour = new Date(selectedSlot.startTime).getHours();
+    const period = localHour < 12 ? 'morning' : 'afternoon';
+    const rawFee = slotsQuery.data?.find((s) => s.id === selectedSlotId)?.finalConsultationFee ?? '0';
+    setDraft({
+      doctorId: doctorId ?? '',
+      date: selectedDate,
+      slotId: selectedSlotId,
+      slotLabel: selectedSlot.label,
+      period,
+      chiefComplaint: values.chiefComplaint?.trim() || undefined,
+      symptoms: values.symptoms?.trim() || undefined,
+      patientNotes: patientNotesHtml || undefined,
+      finalConsultationFee: parseInt(rawFee),
+    });
+    router.push('/appointments/confirm');
   };
 
-  if (slotsQuery.isLoading || doctorQuery.isLoading) {
+  if (doctorQuery.isLoading) {
     return <Loading label="Đang tải thông tin..." />;
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={{ flex: 1, backgroundColor: '#EFF6FF' }}>
+    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <View className="flex-1 bg-blue-50">
 
-        {/* ══ HEADER ══ */}
-        <View style={{
-          backgroundColor: '#0A7CFF',
-          paddingTop: 48, paddingBottom: 16, paddingHorizontal: 16,
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ padding: 4, borderRadius: 20 }}>
+        {/* HEADER */}
+        <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} className="rounded-full p-1">
             <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
           </TouchableOpacity>
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: '700' }}>Đặt lịch khám</Text>
-          <TouchableOpacity activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+          <Text className="text-lg font-bold text-white">Đặt lịch khám</Text>
+          <TouchableOpacity activeOpacity={0.7} className="flex-row items-center gap-1">
             <MaterialIcons name="help-outline" size={18} color="white" />
-            <Text style={{ color: 'white', fontSize: 13, fontWeight: '500' }}>Hỗ trợ</Text>
+            <Text className="text-[13px] font-medium text-white">Hỗ trợ</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ══ STEP INDICATOR ══ */}
-        <View style={{
-          backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12,
-          borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
-          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          {/* Step 1 — active */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#0A7CFF', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>1</Text>
-            </View>
-            <Text style={{ color: '#0A7CFF', fontSize: 12, fontWeight: '600' }}>Chọn lịch khám</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={18} color="#d1d5db" />
-          {/* Step 2 */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#6b7280', fontSize: 11, fontWeight: '700' }}>2</Text>
-            </View>
-            <Text style={{ color: '#9ca3af', fontSize: 12 }}>Xác nhận</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={18} color="#d1d5db" />
-          {/* Step 3 */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#6b7280', fontSize: 11, fontWeight: '700' }}>3</Text>
-            </View>
-            <Text style={{ color: '#9ca3af', fontSize: 12 }}>Nhận lịch hẹn</Text>
-          </View>
-        </View>
+        {/* STEP BAR */}
+        <StepBar current={1} />
 
-        {/* ══ SCROLL ══ */}
+        {/* SCROLL */}
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+          className="flex-1"
+          contentContainerClassName="p-4 pb-[140px]"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-
-          {/* ── DOCTOR CARD ── */}
+          {/* DOCTOR CARD */}
           {doctor && (
-            <View style={{
-              backgroundColor: 'white', borderRadius: 16, padding: 16,
-              shadowColor: '#000', shadowOpacity: 0.06, shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 3,
-              flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 32,
-            }}>
-              {/* Avatar */}
-              <View style={{ position: 'relative' }}>
-                <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden', backgroundColor: '#dbeafe', borderWidth: 2, borderColor: 'white' }}>
+            <View
+              className="mb-6 flex-row items-start gap-[14px] rounded-2xl bg-white p-4"
+              style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 3 }}
+            >
+              <View className="relative">
+                <View className="h-16 w-16 overflow-hidden rounded-full border-2 border-white bg-blue-100">
                   {doctor.avatarUrl ? (
-                    <Image source={{ uri: doctor.avatarUrl }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+                    <Image source={{ uri: doctor.avatarUrl }} className="h-16 w-16" resizeMode="cover" />
                   ) : (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <View className="flex-1 items-center justify-center">
                       <MaterialIcons name="person" size={32} color="#60a5fa" />
                     </View>
                   )}
                 </View>
-                {/* Medical badge */}
-                <View style={{ position: 'absolute', bottom: -4, right: -4, backgroundColor: 'white', borderRadius: 12, padding: 3, borderWidth: 1, borderColor: '#f1f5f9' }}>
-                  <View style={{ backgroundColor: '#2563eb', width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
+                <View className="absolute -bottom-1 -right-1 rounded-xl border border-slate-100 bg-white p-[3px]">
+                  <View className="h-4 w-4 items-center justify-center rounded-full bg-blue-600">
                     <MaterialIcons name="medical-services" size={9} color="white" />
                   </View>
                 </View>
               </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{titleLabel}</Text>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', marginBottom: 4 }}>
+              <View className="flex-1">
+                <Text className="mb-0.5 text-xs text-gray-500">{titleLabel}</Text>
+                <Text className="mb-1 text-base font-bold uppercase text-slate-900">
                   {doctor.fullName ?? 'Bác sĩ'}
                 </Text>
-                <Text style={{ fontSize: 13, color: '#475569' }}>
-                  Chuyên khoa: {specialtyLabel}
-                </Text>
+                <Text className="text-[13px] text-slate-600">Chuyên khoa: {specialtyLabel}</Text>
               </View>
             </View>
           )}
 
-          {/* ══ TIMELINE ══ */}
-          <View style={{ marginLeft: 8, paddingLeft: 24, borderLeftWidth: 2, borderLeftColor: '#e5e7eb' }}>
+          {/* TIMELINE */}
+          <View className="ml-2 pl-6" style={{ borderLeftWidth: 2, borderLeftColor: '#e5e7eb' }}>
 
-            {/* ── STEP 1 · Bệnh nhân ── */}
-            <View style={{ position: 'relative', marginBottom: 32 }}>
+            {/* STEP 1 · Bệnh nhân */}
+            <View className="relative mb-8">
               <TimelineDot icon="check" />
-
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 12 }}>
+              <Text className="mb-3 text-[15px] font-semibold text-slate-900">
                 Đặt lịch khám này cho:
               </Text>
-
-              <View style={{
-                backgroundColor: 'white', borderRadius: 16,
-                shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, elevation: 1,
-                overflow: 'hidden',
-              }}>
-                {/* Avatar + name banner */}
-                <View style={{ padding: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 12, marginBottom: 4, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+              <View className="overflow-hidden rounded-2xl bg-white" style={{ shadowColor: '#000', shadowOpacity: 0.04, elevation: 1 }}>
+                <View className="p-4">
+                  <View className="mb-1 flex-row items-center gap-3 border-b border-gray-100 pb-3">
                     {avatarUrl ? (
-                      <Image source={{ uri: avatarUrl }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+                      <Image source={{ uri: avatarUrl }} className="h-12 w-12 rounded-full" />
                     ) : (
-                      <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center' }}>
+                      <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100">
                         <MaterialIcons name="person" size={24} color="#0A7CFF" />
                       </View>
                     )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 15, fontWeight: '700', color: '#0f172a' }}>{displayName}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 }}>
-                        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#22c55e' }} />
-                        <Text style={{ fontSize: 11, color: '#16a34a' }}>Hồ sơ đang hoạt động</Text>
+                    <View className="flex-1">
+                      <Text className="text-[15px] font-bold text-slate-900">{displayName}</Text>
+                      <View className="mt-[3px] flex-row items-center gap-[5px]">
+                        <View className="h-[7px] w-[7px] rounded-full bg-green-500" />
+                        <Text className="text-[11px] text-green-700">Hồ sơ đang hoạt động</Text>
                       </View>
                     </View>
                   </View>
-
-                  {/* 4 info rows matching HTML design */}
-                  <InfoRow label="Họ và tên"  value={displayName}   />
+                  <InfoRowHorizontal label="Họ và tên" value={displayName} />
                   <Divider />
-                  <InfoRow label="Giới tính"  value={displayGender} />
+                  <InfoRowHorizontal label="Giới tính" value={displayGender} />
                   <Divider />
-                  <InfoRow label="Ngày sinh"  value={displayDOB}    />
+                  <InfoRowHorizontal label="Ngày sinh" value={displayDOB} />
                   <Divider />
-                  <InfoRow label="Điện thoại" value={displayPhone}  />
+                  <InfoRowHorizontal label="Điện thoại" value={displayPhone} />
                 </View>
-
-                {/* Footer */}
-                <View style={{ backgroundColor: '#f8fafc', paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-                  <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
+                <View className="border-t border-slate-100 bg-slate-50 px-4 py-[10px]">
+                  <Text className="text-center text-xs text-gray-400">
                     Thông tin được lấy từ hồ sơ tài khoản của bạn
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* ── STEP 2 · Giờ khám ── */}
-            <View style={{ position: 'relative', marginBottom: 32 }}>
+            {/* STEP 2 · Chọn ngày & giờ khám */}
+            <View className="relative mb-8">
               <TimelineDot icon="check" />
-
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 12 }}>
-                Chọn giờ khám
+              <Text className="mb-3 text-[15px] font-semibold text-slate-900">
+                Chọn ngày & giờ khám
               </Text>
 
-              <Text style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
-                Ngày khám:{' '}
-                <Text style={{ fontWeight: '600', color: '#334155' }}>
-                  {new Date(date).toLocaleDateString('vi-VN', {
-                    weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric',
-                  })}
-                </Text>
-              </Text>
-
-              {slots.length === 0 ? (
-                <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 24, alignItems: 'center' }}>
-                  <MaterialIcons name="event-busy" size={36} color="#d1d5db" />
-                  <Text style={{ marginTop: 8, fontSize: 13, color: '#9ca3af', textAlign: 'center' }}>
-                    Không có khung giờ trống cho ngày này.
-                  </Text>
-                  <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
-                    <Text style={{ fontSize: 13, color: '#0A7CFF', fontWeight: '500' }}>← Chọn ngày khác</Text>
-                  </TouchableOpacity>
+              <View className="overflow-hidden rounded-2xl bg-white" style={{ shadowColor: '#000', shadowOpacity: 0.04, elevation: 1 }}>
+                {/* DatePicker header */}
+                <View className="px-4 pt-4">
+                  <View className="mb-3 flex-row items-center gap-1.5">
+                    <MaterialIcons name="calendar-today" size={14} color="#0A7CFF" />
+                    <Text className="text-xs font-semibold text-blue-500">
+                      Tháng {parseInt(selectedDate.slice(5, 7), 10)}/{selectedDate.slice(0, 4)}
+                    </Text>
+                  </View>
+                  <DatePicker
+                    dates={weekDates}
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                  />
                 </View>
-              ) : (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                  {slots.map((slot) => {
-                    const isSelected = selectedSlotId === slot.id;
-                    return (
-                      <TouchableOpacity
-                        key={slot.id}
-                        onPress={() => setSelectedSlotId(slot.id)}
-                        activeOpacity={0.8}
-                        style={{
-                          paddingVertical: 10, paddingHorizontal: 14,
-                          borderRadius: 12,
-                          borderWidth: 1.5,
-                          borderColor: isSelected ? '#0A7CFF' : '#e5e7eb',
-                          backgroundColor: 'white',
-                          shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 2, elevation: 1,
-                        }}
-                      >
-                        <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? '#0A7CFF' : '#475569' }}>
-                          {`${formatLocalTime(slot.startTime)} - ${formatLocalTime(slot.endTime)}`}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
 
-              {!selectedSlotId && slots.length > 0 && (
-                <Text style={{ marginTop: 10, fontSize: 12, color: '#d97706' }}>
-                  ⚠ Vui lòng chọn một khung giờ để tiếp tục.
-                </Text>
-              )}
+                {/* Slots phân chia sáng / chiều */}
+                <View className="px-4 pb-4 pt-5">
+                  {slotsQuery.isLoading ? (
+                    <Loading fullscreen={false} label="Đang tải khung giờ..." />
+                  ) : timeSlots.length === 0 ? (
+                    <View className="items-center py-6">
+                      <MaterialIcons name="event-busy" size={36} color="#d1d5db" />
+                      <Text className="mt-2 text-center text-[13px] text-gray-400">
+                        Không có khung giờ trống cho ngày này.
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      {morning.length > 0 && (
+                        <View className="mb-4">
+                          <SectionLabel icon="wb-sunny" label="Buổi sáng" color="#fb923c" />
+                          <TimeSlotGrid
+                            slots={morning}
+                            selected={selectedSlotId}
+                            onSelect={setSelectedSlotId}
+                          />
+                        </View>
+                      )}
+                      {afternoon.length > 0 && (
+                        <View>
+                          <SectionLabel icon="cloud" label="Buổi chiều" color="#60a5fa" />
+                          <TimeSlotGrid
+                            slots={afternoon}
+                            selected={selectedSlotId}
+                            onSelect={setSelectedSlotId}
+                          />
+                        </View>
+                      )}
+                    </>
+                  )}
+
+                  {!selectedSlotId && timeSlots.length > 0 && (
+                    <View className="mt-3 flex-row items-center gap-1.5">
+                      <MaterialIcons name="touch-app" size={14} color="#d97706" />
+                      <Text className="text-xs text-amber-600">
+                        Vui lòng chọn một khung giờ để tiếp tục.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             </View>
 
-            {/* ── STEP 3 · Thông tin bổ sung ── */}
-            <View style={{ position: 'relative', paddingBottom: 16 }}>
+            {/* STEP 3 · Thông tin bổ sung */}
+            <View className="relative pb-4">
               <TimelineDot
                 icon="radio-button-unchecked"
                 color={showAdditionalInfo ? '#0A7CFF' : '#d1d5db'}
               />
-
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 4 }}>
+              <Text className="mb-1 text-[15px] font-semibold text-slate-900">
                 Thông tin bổ sung{' '}
-                <Text style={{ color: '#9ca3af', fontWeight: '400', fontSize: 13 }}>(không bắt buộc)</Text>
+                <Text className="text-[13px] font-normal text-gray-400">(không bắt buộc)</Text>
               </Text>
-              <Text style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, lineHeight: 20 }}>
-                Bạn có thể cung cấp thêm các thông tin như lý do khám, triệu chứng, đơn thuốc sử dụng gần đây.
+              <Text className="mb-4 text-[13px] leading-5 text-gray-500">
+                Bạn có thể cung cấp thêm các thông tin như lý do khám, triệu chứng, đơn thuốc gần đây.
               </Text>
 
               {!showAdditionalInfo ? (
-                /* Collapsed */
-                <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, elevation: 1 }}>
-                  <TouchableOpacity onPress={() => setShowAdditionalInfo(true)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Text style={{ color: '#0A7CFF', fontSize: 13, fontWeight: '500' }}>Tôi muốn gửi thêm thông tin</Text>
+                <View className="items-center rounded-2xl bg-white p-4" style={{ shadowColor: '#000', shadowOpacity: 0.04, elevation: 1 }}>
+                  <TouchableOpacity onPress={() => setShowAdditionalInfo(true)} activeOpacity={0.7} className="flex-row items-center gap-1">
+                    <Text className="text-[13px] font-medium text-blue-500">
+                      Tôi muốn gửi thêm thông tin
+                    </Text>
                     <MaterialIcons name="arrow-forward" size={16} color="#0A7CFF" />
                   </TouchableOpacity>
                 </View>
               ) : (
-                /* Expanded */
-                <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, elevation: 1, gap: 20 }}>
-
-                  {/* Lý do khám */}
+                <View className="gap-5 rounded-2xl bg-white p-4" style={{ shadowColor: '#000', shadowOpacity: 0.04, elevation: 1 }}>
                   <Controller
                     control={control}
                     name="chiefComplaint"
                     render={({ field: { onChange, value } }) => (
                       <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 }}>Lý do khám</Text>
+                        <Text className="mb-1.5 text-[13px] font-semibold text-slate-700">Lý do khám</Text>
                         <TextInput
                           value={value}
                           onChangeText={onChange}
                           placeholder="Ví dụ: Ho kéo dài, đau ngực..."
                           placeholderTextColor="#9ca3af"
-                          style={{
-                            borderWidth: 1,
-                            borderColor: errors.chiefComplaint ? '#ef4444' : '#e5e7eb',
-                            borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
-                            fontSize: 14, color: '#1e293b', backgroundColor: '#f9fafb',
-                          }}
+                          className="rounded-xl border border-gray-200 bg-gray-50 px-[14px] py-[11px] text-sm text-slate-900"
                         />
-                        {errors.chiefComplaint && (
-                          <Text style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>{errors.chiefComplaint.message}</Text>
-                        )}
                       </View>
                     )}
                   />
-
-                  {/* Triệu chứng */}
                   <Controller
                     control={control}
                     name="symptoms"
                     render={({ field: { onChange, value } }) => (
                       <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 3 }}>Triệu chứng</Text>
-                        <Text style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>
+                        <Text className="mb-[3px] text-[13px] font-semibold text-slate-700">Triệu chứng</Text>
+                        <Text className="mb-1.5 text-[11px] text-gray-400">
                           Ngăn cách bằng dấu phẩy (VD: Ho, Sốt, Khó thở)
                         </Text>
                         <TextInput
@@ -473,34 +404,21 @@ export function BookAppointmentScreen() {
                           onChangeText={onChange}
                           placeholder="Ho, Sốt, Khó thở..."
                           placeholderTextColor="#9ca3af"
-                          style={{
-                            borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
-                            paddingHorizontal: 14, paddingVertical: 11,
-                            fontSize: 14, color: '#1e293b', backgroundColor: '#f9fafb',
-                          }}
+                          className="rounded-xl border border-gray-200 bg-gray-50 px-[14px] py-[11px] text-sm text-slate-900"
                         />
                       </View>
                     )}
                   />
-
-                  {/* Patient Notes — RichEditor */}
                   <View>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 }}>
+                    <Text className="mb-1.5 text-[13px] font-semibold text-slate-700">
                       Ghi chú thêm cho bác sĩ
                     </Text>
-
-                    {/* Toolbar */}
                     <RichToolbar
                       editor={richEditorRef}
                       actions={[
-                        actions.setBold,
-                        actions.setItalic,
-                        actions.setUnderline,
-                        actions.insertBulletsList,
-                        actions.insertOrderedList,
-                        actions.insertImage,
-                        actions.undo,
-                        actions.redo,
+                        actions.setBold, actions.setItalic, actions.setUnderline,
+                        actions.insertBulletsList, actions.insertOrderedList,
+                        actions.insertImage, actions.undo, actions.redo,
                       ]}
                       style={{
                         backgroundColor: '#f3f4f6',
@@ -512,25 +430,19 @@ export function BookAppointmentScreen() {
                       selectedIconTint="#0A7CFF"
                       onPressAddImage={handleInsertImage}
                     />
-
-                    {/* Editor — scrollEnabled=false + onHeightChange để outer ScrollView
-                        xử lý scroll, editor tự giãn chiều cao theo nội dung */}
-                    <View style={{
-                      borderWidth: 1, borderColor: '#e5e7eb',
-                      borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
-                      height: editorHeight, overflow: 'hidden', backgroundColor: '#f9fafb',
-                    }}>
+                    <View
+                      className="overflow-hidden border border-gray-200 bg-gray-50"
+                      style={{ borderBottomLeftRadius: 12, borderBottomRightRadius: 12, height: editorHeight }}
+                    >
                       <RichEditor
                         ref={richEditorRef}
                         initialHeight={140}
                         placeholder="Thông tin thêm, đơn thuốc đang sử dụng, tiền sử bệnh..."
                         style={{ backgroundColor: '#f9fafb' }}
                         editorStyle={{
-                          backgroundColor: '#f9fafb',
-                          color: '#1e293b',
+                          backgroundColor: '#f9fafb', color: '#1e293b',
                           placeholderColor: '#9ca3af',
-                          contentCSSText:
-                            'font-family: -apple-system, sans-serif; font-size: 14px; padding: 10px; line-height: 1.6;',
+                          contentCSSText: 'font-family: -apple-system, sans-serif; font-size: 14px; padding: 10px; line-height: 1.6;',
                         }}
                         scrollEnabled={false}
                         onHeightChange={(h) => setEditorHeight(Math.max(140, h + 20))}
@@ -538,79 +450,54 @@ export function BookAppointmentScreen() {
                         useContainer
                       />
                     </View>
-
-                    <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 5 }}>
-                      Hỗ trợ in đậm, in nghiêng, gạch chân, danh sách và chèn ảnh.
-                    </Text>
-
-                    {/* Cảnh báo quá 5 ảnh — giống website */}
                     {base64ImageCount > 5 && (
-                      <View style={{
-                        marginTop: 8,
-                        borderRadius: 10, borderWidth: 1,
-                        borderColor: '#fcd34d', backgroundColor: '#fffbeb',
-                        paddingHorizontal: 12, paddingVertical: 8,
-                        flexDirection: 'row', alignItems: 'flex-start', gap: 6,
-                      }}>
+                      <View className="mt-2 flex-row items-start gap-1.5 rounded-[10px] border border-yellow-300 bg-amber-50 px-3 py-2">
                         <MaterialIcons name="warning-amber" size={15} color="#d97706" style={{ marginTop: 1 }} />
-                        <Text style={{ fontSize: 12, color: '#92400e', flex: 1, lineHeight: 18 }}>
-                          Bạn đã chèn {base64ImageCount} ảnh. Backend giới hạn tối đa 5 ảnh mỗi lần đặt lịch.
+                        <Text className="flex-1 text-xs leading-[18px] text-amber-900">
+                          Bạn đã chèn {base64ImageCount} ảnh. Tối đa 5 ảnh mỗi lần đặt lịch.
                         </Text>
                       </View>
                     )}
                   </View>
-
-                  <TouchableOpacity onPress={() => setShowAdditionalInfo(false)} style={{ alignItems: 'center' }} activeOpacity={0.7}>
-                    <Text style={{ color: '#9ca3af', fontSize: 12 }}>Thu gọn ↑</Text>
+                  <TouchableOpacity onPress={() => setShowAdditionalInfo(false)} className="items-center" activeOpacity={0.7}>
+                    <Text className="text-xs text-gray-400">Thu gọn ↑</Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
-
-          </View>{/* end timeline */}
-
-          {createMutation.isError && (
-            <Text style={{ marginTop: 16, fontSize: 13, color: '#ef4444', textAlign: 'center' }}>
-              Không thể tạo lịch khám. Vui lòng thử lại.
-            </Text>
-          )}
+          </View>
         </ScrollView>
 
-        {/* ══ FIXED CTA ══ */}
-        <View style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          backgroundColor: 'white',
-          borderTopWidth: 1, borderTopColor: '#f1f5f9',
-          paddingHorizontal: 16, paddingTop: 12,
-          paddingBottom: Platform.OS === 'ios' ? 36 : 16,
-          shadowColor: '#000', shadowOpacity: 0.06, shadowOffset: { width: 0, height: -4 }, shadowRadius: 6, elevation: 12,
-        }}>
+        {/* FIXED CTA */}
+        <View
+          className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${
+            Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
+          }`}
+          style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowOffset: { width: 0, height: -4 }, shadowRadius: 6, elevation: 12 }}
+        >
           {selectedLabel && (
-            <Text style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-              Đã chọn:{' '}
-              <Text style={{ fontWeight: '600', color: '#475569' }}>{selectedLabel}</Text>
+            <Text className="mb-2 text-center text-xs text-gray-400">
+              Đã chọn: <Text className="font-semibold text-slate-600">{selectedLabel}</Text>
             </Text>
           )}
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
-            disabled={!selectedSlotId || createMutation.isPending}
+            disabled={!selectedSlotId}
             activeOpacity={0.85}
+            className={`items-center justify-center rounded-[14px] py-4 ${
+              selectedSlotId ? 'bg-blue-500' : 'bg-blue-300'
+            }`}
             style={{
-              backgroundColor: selectedSlotId && !createMutation.isPending ? '#0A7CFF' : '#93c5fd',
-              borderRadius: 14, paddingVertical: 16,
-              alignItems: 'center', justifyContent: 'center',
               shadowColor: '#0A7CFF',
               shadowOpacity: selectedSlotId ? 0.3 : 0,
-              shadowOffset: { width: 0, height: 4 }, shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 8,
               elevation: selectedSlotId ? 4 : 0,
             }}
           >
-            <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-              {createMutation.isPending ? 'Đang xử lý...' : 'Tiếp tục'}
-            </Text>
+            <Text className="text-base font-bold text-white">Tiếp tục</Text>
           </TouchableOpacity>
         </View>
-
       </View>
     </KeyboardAvoidingView>
   );
