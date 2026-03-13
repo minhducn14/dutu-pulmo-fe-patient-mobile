@@ -1090,7 +1090,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Danh sach time slots",
+            "description": "Danh sách time slots",
             "content": {
               "application/json": {
                 "schema": {
@@ -1103,7 +1103,7 @@
             }
           }
         },
-        "summary": "Lay tat ca time slots cua bac si",
+        "summary": "Lấy tất cả time slots của bác sĩ",
         "tags": [
           "Public Time Slots"
         ]
@@ -1126,7 +1126,7 @@
             "name": "date",
             "required": true,
             "in": "query",
-            "description": "Ngay can tim (YYYY-MM-DD)",
+            "description": "Ngày cần tìm (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -1135,7 +1135,7 @@
             "name": "appointmentType",
             "required": false,
             "in": "query",
-            "description": "Loc slot theo online/offline (mac dinh all)",
+            "description": "Lọc slot theo online/offline (mặc định all)",
             "schema": {
               "enum": [
                 "all",
@@ -1148,7 +1148,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Danh sach time slots con trong",
+            "description": "Danh sách time slots còn trống",
             "content": {
               "application/json": {
                 "schema": {
@@ -1161,7 +1161,7 @@
             }
           }
         },
-        "summary": "Lay cac time slots con trong theo ngay",
+        "summary": "Lấy các time slots còn trống theo ngày",
         "tags": [
           "Public Time Slots"
         ]
@@ -1184,7 +1184,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "Ngay bat dau (YYYY-MM-DD)",
+            "description": "Ngày bắt đầu (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -1193,7 +1193,7 @@
             "name": "to",
             "required": false,
             "in": "query",
-            "description": "Ngay ket thuc (YYYY-MM-DD)",
+            "description": "Ngày kết thúc (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -1202,7 +1202,7 @@
             "name": "appointmentType",
             "required": false,
             "in": "query",
-            "description": "Loc summary theo online/offline (mac dinh all)",
+            "description": "Lọc summary theo online/offline (mặc định all)",
             "schema": {
               "enum": [
                 "all",
@@ -1215,10 +1215,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Danh sach tom tat"
+            "description": "Danh sách tóm tắt"
           }
         },
-        "summary": "Lay tom tat so luong slot con trong (mac dinh 7 ngay tu hien tai)",
+        "summary": "Lấy tóm tắt số lượng slot còn trống (Mặc định 7 ngày từ hiện tại)",
         "tags": [
           "Public Time Slots"
         ]
@@ -1247,7 +1247,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Chi tiet time slot",
+            "description": "Chi tiết time slot",
             "content": {
               "application/json": {
                 "schema": {
@@ -1257,10 +1257,10 @@
             }
           },
           "404": {
-            "description": "Khong tim thay time slot"
+            "description": "Không tìm thấy time slot"
           }
         },
-        "summary": "Lay chi tiet mot time slot",
+        "summary": "Lấy chi tiết một time slot",
         "tags": [
           "Public Time Slots"
         ]
@@ -7327,12 +7327,12 @@
           "hasOnlineFutureSlots": {
             "type": "boolean",
             "example": true,
-            "description": "Bac si co slot tu van online trong tuong lai"
+            "description": "Bác sĩ có slot tư vấn online trong tương lai"
           },
           "hasOfflineFutureSlots": {
             "type": "boolean",
             "example": true,
-            "description": "Bac si co slot kham offline trong tuong lai"
+            "description": "Bác sĩ có slot khám offline trong tương lai"
           },
           "createdAt": {
             "format": "date-time",
@@ -9563,6 +9563,63 @@
           "status"
         ]
       },
+      "PatientUserSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "provinceCode": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "wardCode": {
+            "type": "string"
+          },
+          "ward": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "CCCD": {
+            "type": "string"
+          },
+          "nationality": {
+            "type": "string"
+          },
+          "ethnicity": {
+            "type": "string"
+          },
+          "occupation": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
       "PatientResponseDto": {
         "type": "object",
         "properties": {
@@ -9618,8 +9675,12 @@
             "description": "Ngày cập nhật"
           },
           "user": {
-            "type": "object",
-            "description": "Thông tin user (nếu có relation)"
+            "description": "Thông tin user (nếu có relation)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PatientUserSummaryDto"
+              }
+            ]
           }
         },
         "required": [
