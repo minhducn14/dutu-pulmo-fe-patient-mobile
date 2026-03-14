@@ -1,6 +1,8 @@
 import type { DateItem } from '@/components/doctor/DatePicker';
 import type { TimeSlot } from '@/components/doctor/TimeSlotGrid';
-import type { TimeSlotResponseDto } from '@/types/generated/patient-api';
+import type { components } from '@/types/generated/patient-api';
+
+type TimeSlotResponseDto = components['schemas']['TimeSlotResponseDto'];
 
 // ─── Date window helpers ──────────────────────────────────────────────────────
 export const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -30,7 +32,11 @@ export function buildDateWindow(days = DATE_WINDOW_DAYS): DateItem[] {
 // ─── Slot helpers ─────────────────────────────────────────────────────────────
 export function formatLocalTime(utcStr: string): string {
   const d = new Date(utcStr);
-  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }
 
 export function toTimeSlots(apiSlots: TimeSlotResponseDto[]): TimeSlot[] {
@@ -62,5 +68,9 @@ export function formatWeekdayDate(dateStr: string): string {
 
 export function genderLabel(gender?: string | null): string {
   if (!gender) return '—';
-  return ({ MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' } as Record<string, string>)[gender] ?? gender;
+  return (
+    ({ MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' } as Record<string, string>)[
+      gender
+    ] ?? gender
+  );
 }

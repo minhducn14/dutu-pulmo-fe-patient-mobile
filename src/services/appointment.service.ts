@@ -71,7 +71,11 @@ export const appointmentService = {
 
   getDoctorTimeSlotSummary: async (
     doctorId: string,
-    params?: { from?: string; to?: string; appointmentType?: AppointmentTypeFilter },
+    params?: {
+      from?: string;
+      to?: string;
+      appointmentType?: AppointmentTypeFilter;
+    },
   ) => {
     const { data } = await api.get<
       { date: string; count: number; hasAvailability: boolean }[]
