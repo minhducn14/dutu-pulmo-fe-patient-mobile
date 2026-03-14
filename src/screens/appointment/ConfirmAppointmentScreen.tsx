@@ -9,8 +9,10 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import RenderHtml from 'react-native-render-html';
 
 import { Loading } from '@/components/ui/Loading';
 import { StepBar } from '@/components/appointment/StepBar';
@@ -29,11 +31,13 @@ import { getDoctorTitleLabel, getSpecialtyLabel } from '@/utils/doctor-display';
 // ══════════════════════════════════════════════════════════════════════════════
 export function ConfirmAppointmentScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const draft = useBookingStore((s) => s.draft);
   const clearDraft = useBookingStore((s) => s.clearDraft);
   const user = useAuthStore((s) => s.user);
 
   const [patientInfoExpanded, setPatientInfoExpanded] = useState(true);
+  const [additionalInfoExpanded, setAdditionalInfoExpanded] = useState(true);
 
   const meQuery = useProfile();
   const myPatientQuery = useMyPatient();
@@ -67,9 +71,7 @@ export function ConfirmAppointmentScreen() {
   const myPatient = myPatientQuery.data;
 
   const titleLabel = doctor ? getDoctorTitleLabel(doctor.title) : '';
-  const specialtyLabel = doctor
-    ? getSpecialtyLabel(doctor.specialty ?? '')
-    : '';
+  const specialtyLabel = doctor ? getSpecialtyLabel(doctor.specialty ?? '') : '';
 
   const displayName = me?.patient?.user?.fullName ?? user?.fullName ?? '—';
   const displayGender = genderLabel(me?.patient?.user?.gender);
@@ -80,9 +82,12 @@ export function ConfirmAppointmentScreen() {
 
   const isMorning = draft.period === 'morning';
   const periodLabel = isMorning ? 'Buổi sáng' : 'Buổi chiều';
-  const periodColor = isMorning ? '#16a34a' : '#2563eb';
   const periodDotClass = isMorning ? 'bg-green-600' : 'bg-blue-600';
   const periodTextClass = isMorning ? 'text-green-700' : 'text-blue-700';
+
+  // Kiểm tra có thông tin bổ sung không
+  const hasAdditionalInfo =
+    !!draft.chiefComplaint || !!draft.symptoms || !!draft.patientNotes;
 
   const onConfirm = () => {
     createMutation.mutate(
@@ -189,9 +194,7 @@ export function ConfirmAppointmentScreen() {
                   {draft.slotLabel}
                 </Text>
                 <View className="mt-1 flex-row items-center gap-1">
-                  <View
-                    className={`h-1.5 w-1.5 rounded-full ${periodDotClass}`}
-                  />
+                  <View className={`h-1.5 w-1.5 rounded-full ${periodDotClass}`} />
                   <Text className={`text-xs font-medium ${periodTextClass}`}>
                     {periodLabel}
                   </Text>
@@ -244,6 +247,116 @@ export function ConfirmAppointmentScreen() {
           </View>
         </View>
 
+        {/* ── THÔNG TIN BỔ SUNG ── */}
+        {hasAdditionalInfo && (
+          <View className="mt-5 px-4">
+            <Text className="mb-[10px] text-[11px] font-bold tracking-[0.8px] text-slate-400">
+              THÔNG TIN BỔ SUNG
+            </Text>
+
+            <View
+              className="overflow-hidden rounded-2xl bg-white"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              {/* Header toggle */}
+              <Pressable
+                onPress={() => setAdditionalInfoExpanded(!additionalInfoExpanded)}
+                className={`flex-row items-center px-4 py-3 ${
+                  additionalInfoExpanded ? 'border-b border-slate-100' : ''
+                }`}
+              >
+                <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-blue-50">
+                  <MaterialIcons name="note-alt" size={14} color="#0A7CFF" />
+                </View>
+                <Text className="flex-1 text-[13px] font-semibold text-slate-700">
+                  Thông tin gửi cho bác sĩ
+                </Text>
+                <MaterialIcons
+                  name={additionalInfoExpanded ? 'expand-less' : 'expand-more'}
+                  size={20}
+                  color="#94a3b8"
+                />
+              </Pressable>
+
+              {additionalInfoExpanded && (
+                <View className="p-4 gap-4">
+                  {/* Lý do khám */}
+                  {!!draft.chiefComplaint && (
+                    <View>
+                      <Text className="mb-1 text-[11px] font-bold tracking-[0.6px] text-slate-400">
+                        LÝ DO KHÁM
+                      </Text>
+                      <Text className="text-[14px] leading-[22px] text-slate-700">
+                        {draft.chiefComplaint}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Triệu chứng */}
+                  {!!draft.symptoms && (
+                    <View>
+                      <Text className="mb-2 text-[11px] font-bold tracking-[0.6px] text-slate-400">
+                        TRIỆU CHỨNG
+                      </Text>
+                      <View className="flex-row flex-wrap gap-2">
+                        {draft.symptoms
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                          .map((symptom, idx) => (
+                            <View
+                              key={idx}
+                              className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1"
+                            >
+                              <Text className="text-[12px] font-medium text-blue-700">
+                                {symptom}
+                              </Text>
+                            </View>
+                          ))}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Ghi chú thêm — render HTML */}
+                  {!!draft.patientNotes && (
+                    <View>
+                      <Text className="mb-2 text-[11px] font-bold tracking-[0.6px] text-slate-400">
+                        GHI CHÚ THÊM
+                      </Text>
+                      <View className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                        <RenderHtml
+                          contentWidth={width - 80}
+                          source={{ html: draft.patientNotes }}
+                          tagsStyles={{
+                            body: {
+                              color: '#334155',
+                              fontSize: 14,
+                              lineHeight: 22,
+                              margin: 0,
+                              padding: 0,
+                            },
+                            p: { marginTop: 0, marginBottom: 4 },
+                            ul: { marginTop: 0, marginBottom: 4, paddingLeft: 16 },
+                            ol: { marginTop: 0, marginBottom: 4, paddingLeft: 16 },
+                            li: { marginBottom: 2 },
+                            strong: { fontWeight: '700' },
+                            em: { fontStyle: 'italic' },
+                          }}
+                        />
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* ── CHI TIẾT THANH TOÁN ── */}
         <View className="mt-5 px-4">
           <View className="mb-[10px] flex-row items-center justify-between">
@@ -270,14 +383,10 @@ export function ConfirmAppointmentScreen() {
             </View>
             <View className="flex-row justify-between border-b border-slate-50 py-[10px]">
               <Text className="text-sm text-gray-700">Phí tiện ích</Text>
-              <Text className="text-sm font-medium text-green-500">
-                Miễn phí
-              </Text>
+              <Text className="text-sm font-medium text-green-500">Miễn phí</Text>
             </View>
             <View className="flex-row justify-between py-[10px]">
-              <Text className="text-[15px] font-bold text-slate-900">
-                Tổng thanh toán
-              </Text>
+              <Text className="text-[15px] font-bold text-slate-900">Tổng thanh toán</Text>
               <Text className="text-[15px] font-bold text-slate-900">
                 {draft.finalConsultationFee?.toLocaleString('vi-VN')}đ
               </Text>
@@ -298,10 +407,7 @@ export function ConfirmAppointmentScreen() {
             <SupportItem icon="description" label="Hướng dẫn đi khám" />
             <SupportItem icon="payment" label="Hướng dẫn thanh toán" />
             <SupportItem icon="sync" label="Quy trình huỷ lịch / hoàn tiền" />
-            <SupportItem
-              icon="help-outline"
-              label="Một số câu hỏi thường gặp"
-            />
+            <SupportItem icon="help-outline" label="Một số câu hỏi thường gặp" />
             <View className="border-b-0">
               <SupportItem icon="report-problem" label="Báo cáo sự cố" />
             </View>
@@ -319,9 +425,7 @@ export function ConfirmAppointmentScreen() {
             />
             <Text className="flex-1 text-xs leading-[18px] text-slate-400">
               Bằng việc đăng ký / thanh toán bạn đã đọc và đồng ý với các{' '}
-              <Text className="text-blue-500">
-                điều khoản và điều kiện sử dụng
-              </Text>{' '}
+              <Text className="text-blue-500">điều khoản và điều kiện sử dụng</Text>{' '}
               của chúng tôi.
             </Text>
           </View>
