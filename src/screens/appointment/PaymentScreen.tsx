@@ -1,21 +1,19 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  Linking,
-  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  Image,
 } from 'react-native';
 
 import { Loading } from '@/components/ui/Loading';
 import { StepBar } from '@/components/appointment/StepBar';
 import { useAppointmentDetail } from '@/hooks/useAppointments';
-import { useCreatePayment, usePaymentStatus } from '@/hooks/usePayment';
+import { useCreatePayment, usePaymentStatusOnce } from '@/hooks/usePayment';
+import { usePaymentSocket } from '@/hooks/usePaymentSocket';
 import QRCode from 'react-native-qrcode-svg';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -25,23 +23,56 @@ export function PaymentScreen() {
     appointmentId: string;
   }>();
 
+  const [paymentStatus, setPaymentStatus] = useState<string | undefined>();
+
   const detailQuery = useAppointmentDetail(appointmentId);
   const appointment = detailQuery.data;
 
   const createPayment = useCreatePayment();
   const payment = createPayment.data;
 
-  // Poll every 5s while PENDING — stops automatically when status changes
-  const statusQuery = usePaymentStatus(appointmentId, !!payment);
-  const livePayment = statusQuery.data ?? payment;
-  const paymentStatus = livePayment?.status;
+  // ── 1. WebSocket: nhận status real-time từ server ─────────────────────
+  usePaymentSocket(
+    appointmentId,
+    useCallback((status) => {
+      setPaymentStatus(status);
+    }, []),
+  );
 
-  // Amount from API response (authoritative)
-  const totalAmount = Number(livePayment?.amount ?? 0);
-  const formattedAmount =
-    totalAmount === 0 ? '0đ' : `${totalAmount.toLocaleString('vi-VN')}đ`;
+  // ── 2. Fallback: poll 1 lần duy nhất sau 30s nếu socket miss ─────────
+  // Dùng useRef để đảm bảo timer chỉ được set đúng 1 lần,
+  // tránh trường hợp re-render reset/chạy timer sớm hơn dự kiến.
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fallbackQuery = usePaymentStatusOnce(appointmentId);
 
-  // Trigger payment creation on mount (idempotent guard)
+  useEffect(() => {
+    // Chỉ bắt đầu đếm khi payment vừa được tạo xong
+    // và chưa có timer nào đang chạy
+    if (!payment?.id || fallbackTimerRef.current) return;
+
+    fallbackTimerRef.current = setTimeout(() => {
+      void fallbackQuery.refetch();
+    }, 30_000);
+
+    return () => {
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payment?.id]);
+
+  // Nếu fallback trả về status khác PENDING thì cập nhật state
+  useEffect(() => {
+    const s = fallbackQuery.data?.status;
+    if (s && s !== 'PENDING') {
+      setPaymentStatus(s);
+    }
+  }, [fallbackQuery.data?.status]);
+  // ─────────────────────────────────────────────────────────────────────
+
+  // ── Trigger tạo payment lúc mount (idempotent guard) ──────────────────
   useEffect(() => {
     if (!appointmentId || createPayment.isPending || createPayment.data) return;
     createPayment.mutate(appointmentId, {
@@ -56,25 +87,25 @@ export function PaymentScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointmentId]);
 
-  // Navigate to success when paid
+  // ── Navigate to success khi PAID ──────────────────────────────────────
   useEffect(() => {
     if (paymentStatus === 'PAID') {
       router.replace(`/appointments/success?appointmentId=${appointmentId}`);
     }
   }, [paymentStatus, appointmentId, router]);
 
-  const handleOpenCheckout = () => {
-    const url = livePayment?.checkoutUrl;
-    if (url) Linking.openURL(url);
-  };
-
-  // ── Loading state ──
+  // ── Loading state ──────────────────────────────────────────────────────
   if (detailQuery.isLoading || createPayment.isPending) {
     return <Loading label="Đang tạo thanh toán..." />;
   }
 
-  // Use properties from PayOS to build the QR image URL from VietQR
-  const bin = livePayment?.bin;
+  // ── Derived values ─────────────────────────────────────────────────────
+  const livePayment = payment;
+
+  const totalAmount = Number(livePayment?.amount ?? 0);
+  const formattedAmount =
+    totalAmount === 0 ? '0đ' : `${totalAmount.toLocaleString('vi-VN')}đ`;
+
   const accountNumber = livePayment?.accountNumber;
   const accountName = livePayment?.accountName;
   const description = livePayment?.description;
@@ -83,6 +114,7 @@ export function PaymentScreen() {
   const isCancelled =
     paymentStatus === 'CANCELLED' || paymentStatus === 'EXPIRED';
 
+  // ══════════════════════════════════════════════════════════════════════
   return (
     <View className="flex-1 bg-slate-50">
       {/* HEADER */}
@@ -99,7 +131,7 @@ export function PaymentScreen() {
       </View>
 
       {/* STEP BAR */}
-      <StepBar current={3} step3Label="Thanh toán" />
+      <StepBar current={3} />
 
       <ScrollView
         className="flex-1"
@@ -165,7 +197,7 @@ export function PaymentScreen() {
             >
               <View className="rounded-xl border border-slate-100 bg-white p-3">
                 <QRCode
-                  value={livePayment.qrCode}
+                  value={livePayment!.qrCode}
                   size={200}
                   backgroundColor="white"
                   color="black"
@@ -200,7 +232,7 @@ export function PaymentScreen() {
                 </View>
               </View>
 
-              {/* Polling indicator */}
+              {/* Socket indicator */}
               <View className="mt-5 flex-row items-center gap-2">
                 <View className="h-2 w-2 rounded-full bg-green-500" />
                 <Text className="text-xs text-slate-500">
@@ -244,38 +276,6 @@ export function PaymentScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* <View
-        className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${
-          Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
-        }`}
-        style={{
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowOffset: { width: 0, height: -4 },
-          shadowRadius: 8,
-          elevation: 16,
-        }}
-      >
-        <TouchableOpacity
-          onPress={handleOpenCheckout}
-          disabled={!payment?.checkoutUrl}
-          activeOpacity={0.85}
-          className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-500 py-4"
-          style={{
-            shadowColor: '#0A7CFF',
-            shadowOpacity: 0.3,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 10,
-            elevation: 6,
-          }}
-        >
-          <MaterialIcons name="open-in-browser" size={20} color="white" />
-          <Text className="text-base font-bold text-white">
-            Mở trang thanh toán
-          </Text>
-        </TouchableOpacity>
-      </View> */}
     </View>
   );
 }
