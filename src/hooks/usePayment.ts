@@ -8,19 +8,26 @@ export function useCreatePayment() {
   });
 }
 
-export function usePaymentStatus(appointmentId: string, enabled: boolean) {
+export function usePaymentStatusOnce(appointmentId: string) {
   return useQuery({
-    queryKey: ['payment', appointmentId],
+    queryKey: ['payment-fallback', appointmentId],
     queryFn: () => paymentService.getPaymentByAppointment(appointmentId),
-    enabled: enabled && !!appointmentId,
-    refetchInterval: (query) =>
-      query.state.data?.status === 'PENDING' ? 5000 : false,
+    enabled: false,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
   });
 }
 
 export function useCancelPayment() {
   return useMutation({
-    mutationFn: ({ appointmentId, reason }: { appointmentId: string; reason?: string }) =>
-      paymentService.cancelPayment(appointmentId, reason),
+    mutationFn: ({
+      appointmentId,
+      reason,
+    }: {
+      appointmentId: string;
+      reason?: string;
+    }) => paymentService.cancelPayment(appointmentId, reason),
   });
 }
