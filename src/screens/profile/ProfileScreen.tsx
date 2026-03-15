@@ -60,7 +60,7 @@ export function ProfileScreen() {
           subtitle="Kết thúc phiên đăng nhập"
           onPress={() => {
             clearSession();
-            router.replace('/(auth)/login');
+            console.log('Redirecting to login in ProfileScreen');
           }}
         />
       </View>

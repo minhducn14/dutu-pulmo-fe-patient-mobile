@@ -24,7 +24,7 @@ export function SettingsScreen() {
           title="Sign out"
           onPress={() => {
             clearSession();
-            router.replace('/(auth)/login');
+            console.log('Redirecting to login in SettingsScreen');
           }}
         />
       </View>

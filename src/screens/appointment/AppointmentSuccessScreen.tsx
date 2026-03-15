@@ -220,7 +220,7 @@ export function AppointmentSuccessScreen() {
       </View>
 
       {/* STEP BAR */}
-      <StepBar current={3} />
+      <StepBar current={4} />
 
       <ScrollView
         className="flex-1"

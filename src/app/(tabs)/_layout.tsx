@@ -32,9 +32,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="ai"
+        name="support"
         options={{
-          title: 'Tư vấn AI',
+          title: 'Tư vấn',
           tabBarIcon: ({ color, size }) => <Bot color={color} size={size} />,
         }}
       />

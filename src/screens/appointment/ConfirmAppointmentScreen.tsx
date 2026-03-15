@@ -106,7 +106,7 @@ export function ConfirmAppointmentScreen() {
         onSuccess: (appointment) => {
           clearDraft();
           router.replace(
-            `/appointments/payment?appointmentId=${appointment.id}&amount=0`,
+            `/appointments/payment?appointmentId=${appointment.id}`,
           );
         },
         onError: () => {
