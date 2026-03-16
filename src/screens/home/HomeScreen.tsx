@@ -76,12 +76,12 @@ export function HomeScreen() {
       onPress: () => router.push('/doctors'),
     },
     {
-      key: 'ai',
-      label: 'Phân tích\nAI',
+      key: 'support',
+      label: 'Hỗ trợ',
       iconName: 'center-focus-strong',
       color: '#4F46E5',
       bg: '#EEF2FF',
-      onPress: () => router.push('/(tabs)/ai'),
+      onPress: () => router.push('/(tabs)/support'),
     },
     {
       key: 'chat',
@@ -89,7 +89,7 @@ export function HomeScreen() {
       iconName: 'chat-bubble',
       color: theme.colors.secondary,
       bg: '#F0FDF4',
-      onPress: () => router.push('/(tabs)/notifications'),
+      onPress: () => router.push('/(tabs)/chat'),
     },
     {
       key: 'video',

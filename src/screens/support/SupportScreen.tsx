@@ -113,7 +113,7 @@ export function SupportScreen() {
   const firstName = user?.fullName?.split(' ').pop() ?? 'bạn';
 
   const handleCall = () => Linking.openURL('tel:19002805');
-  const handleChat = () => router.push('/(tabs)/notifications');
+  const handleChat = () => router.push('/(tabs)/chat');
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>

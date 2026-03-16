@@ -39,7 +39,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="chat"
         options={{
           title: 'Tin nhắn',
           tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
