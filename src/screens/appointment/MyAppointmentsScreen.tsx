@@ -133,7 +133,7 @@ export function MyAppointmentsScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScreenHeader title="Lịch khám của tôi" />
+      <ScreenHeader title="Lịch khám của tôi" hideBack={true} />
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 pb-8"

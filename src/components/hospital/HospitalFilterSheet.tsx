@@ -184,36 +184,82 @@ export function HospitalFilterSheet({
           <View style={{ height: 20 }} />
         </ScrollView>
 
-        <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-          <Pressable
-            onPress={() => setDraft({ city: '', type: 'all' })}
-            style={({ pressed }) => ({
-              flex: 1,
-              borderRadius: 12,
-              paddingVertical: 14,
-              alignItems: 'center',
-              backgroundColor: '#F1F5F9',
-              opacity: pressed ? 0.8 : 1,
-            })}
-          >
-            <Text style={{ color: '#374151', fontWeight: '600' }}>Xoá bộ lọc</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              onApply(draft);
-              onClose();
-            }}
-            style={({ pressed }) => ({
-              flex: 1,
-              borderRadius: 12,
-              paddingVertical: 14,
-              alignItems: 'center',
-              backgroundColor: '#0A7CFF',
-              opacity: pressed ? 0.85 : 1,
-            })}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Áp dụng</Text>
-          </Pressable>
+        <View style={{ flexDirection: 'row', marginTop: 12 }}>
+          {/* Xoá bộ lọc */}
+          <View style={{ flex: 1, marginRight: 6 }}>
+            <View
+              style={{
+                height: 50,
+                borderRadius: 14,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#F1F5F9',
+                borderWidth: 1,
+                borderColor: '#E2E8F0',
+              }}
+            >
+              <Pressable
+                onPress={() => setDraft({ city: '', type: 'all' })}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: '#475569',
+                    fontWeight: '600',
+                    fontSize: 15,
+                  }}
+                >
+                  Xoá bộ lọc
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Áp dụng */}
+          <View style={{ flex: 1, marginLeft: 6 }}>
+            <View
+              style={{
+                height: 50,
+                borderRadius: 14,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#2563EB',
+                shadowColor: '#2563EB',
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }}
+            >
+              <Pressable
+                onPress={() => {
+                  onApply(draft);
+                  onClose();
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontWeight: '700',
+                    fontSize: 15,
+                  }}
+                >
+                  Áp dụng
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>

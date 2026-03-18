@@ -21,6 +21,7 @@ import {
 import { z } from 'zod';
 
 import { Loading } from '@/components/ui/Loading';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { DatePicker } from '@/components/doctor/DatePicker';
 import { TimeSlotGrid } from '@/components/doctor/TimeSlotGrid';
 import { SectionLabel } from '@/components/doctor/SectionLabel';
@@ -224,25 +225,17 @@ export function BookAppointmentScreen() {
   }
 
   return (
-    <View className="flex-1 bg-blue-50">
-      {/* HEADER */}
-      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          className="rounded-full p-1"
-        >
-          <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-white">Đặt lịch khám</Text>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          className="flex-row items-center gap-1"
-        >
-          <MaterialIcons name="help-outline" size={18} color="white" />
-          <Text className="text-[13px] font-medium text-white">Hỗ trợ</Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-1 bg-slate-50">
+      <ScreenHeader
+        title="Đặt lịch khám"
+        onBack={() => router.back()}
+        rightSlot={
+          <TouchableOpacity activeOpacity={0.7} className="flex-row items-center gap-1">
+            <MaterialIcons name="help-outline" size={18} color="white" />
+            <Text className="text-[13px] font-medium text-white">Hỗ trợ</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* STEP BAR */}
       <StepBar current={1} />
@@ -668,9 +661,8 @@ export function BookAppointmentScreen() {
 
       {/* FIXED CTA */}
       <View
-        className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${
-          Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
-        }`}
+        className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
+          }`}
         style={{
           shadowColor: '#000',
           shadowOpacity: 0.06,
@@ -691,9 +683,8 @@ export function BookAppointmentScreen() {
           onPress={handleSubmit(onSubmit)}
           disabled={!selectedSlotId}
           activeOpacity={0.85}
-          className={`items-center justify-center rounded-[14px] py-4 ${
-            selectedSlotId ? 'bg-blue-500' : 'bg-blue-300'
-          }`}
+          className={`items-center justify-center rounded-[14px] py-4 ${selectedSlotId ? 'bg-blue-500' : 'bg-blue-300'
+            }`}
           style={{
             shadowColor: '#0A7CFF',
             shadowOpacity: selectedSlotId ? 0.3 : 0,

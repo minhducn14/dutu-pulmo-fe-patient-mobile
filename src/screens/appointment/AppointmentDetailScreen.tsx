@@ -27,7 +27,10 @@ import { useMyPatient } from '@/hooks/useProfile';
 import { useAuthStore } from '@/store/auth.store';
 import { chatService } from '@/services/chat.service';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { APPOINTMENT_STATUS_CONFIG, FALLBACK_APPOINTMENT_STATUS } from '@/constants/status-configs';
+import {
+  APPOINTMENT_STATUS_CONFIG,
+  FALLBACK_APPOINTMENT_STATUS,
+} from '@/constants/status-configs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function QrCodeBox({ value }: { value: string }) {
@@ -179,8 +182,10 @@ export function AppointmentDetailScreen() {
   const myPatient = myPatientQuery.data;
 
   const statusConfig =
-    APPOINTMENT_STATUS_CONFIG[appointment.status] ?? FALLBACK_APPOINTMENT_STATUS;
-  const canCancel = ['PENDING', 'CONFIRMED', 'PENDING_PAYMENT'].includes(
+    APPOINTMENT_STATUS_CONFIG[appointment.status] ??
+    FALLBACK_APPOINTMENT_STATUS;
+  const canCancel = ['PENDING', 'PENDING_PAYMENT'].includes(appointment.status);
+  const canJoinVideo = ['CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'].includes(
     appointment.status,
   );
   const isCancelled = appointment.status === 'CANCELLED';
@@ -217,7 +222,11 @@ export function AppointmentDetailScreen() {
         <ScreenHeader
           title="Phiếu khám"
           rightSlot={
-            <TouchableOpacity onPress={handleShare} activeOpacity={0.7} className="rounded-full p-1">
+            <TouchableOpacity
+              onPress={handleShare}
+              activeOpacity={0.7}
+              className="rounded-full p-1"
+            >
               <MaterialIcons name="ios-share" size={22} color="white" />
             </TouchableOpacity>
           }
@@ -440,21 +449,23 @@ export function AppointmentDetailScreen() {
             </TouchableOpacity>
           ) : isVideoAppointment ? (
             <View className="gap-2">
-              <TouchableOpacity
-                onPress={() =>
-                  router.push({
-                    pathname: '/video-call',
-                    params: { appointmentId },
-                  })
-                }
-                activeOpacity={0.85}
-                className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-500 py-[15px]"
-              >
-                <MaterialIcons name="video-call" size={18} color="white" />
-                <Text className="text-[15px] font-bold text-white">
-                  Vào video call
-                </Text>
-              </TouchableOpacity>
+              {canJoinVideo ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: '/video-call',
+                      params: { appointmentId },
+                    })
+                  }
+                  activeOpacity={0.85}
+                  className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-500 py-[15px]"
+                >
+                  <MaterialIcons name="video-call" size={18} color="white" />
+                  <Text className="text-[15px] font-bold text-white">
+                    Vào video call
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               {canCancel ? (
                 <TouchableOpacity
                   onPress={() => setCancelModalOpen(true)}
@@ -464,6 +475,22 @@ export function AppointmentDetailScreen() {
                 >
                   <Text className="text-[15px] font-bold text-red-500">
                     Hủy lịch
+                  </Text>
+                </TouchableOpacity>
+              ) : appointment.status === 'COMPLETED' ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: '/appointments/review',
+                      params: { appointmentId },
+                    })
+                  }
+                  activeOpacity={0.85}
+                  className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-600 py-[15px]"
+                >
+                  <MaterialIcons name="rate-review" size={18} color="white" />
+                  <Text className="text-[15px] font-bold text-white">
+                    Đánh giá bác sĩ
                   </Text>
                 </TouchableOpacity>
               ) : null}
@@ -477,6 +504,22 @@ export function AppointmentDetailScreen() {
             >
               <Text className="text-[15px] font-bold text-red-500">
                 Huỷ lịch
+              </Text>
+            </TouchableOpacity>
+          ) : appointment.status === 'COMPLETED' ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/appointments/review',
+                  params: { appointmentId },
+                })
+              }
+              activeOpacity={0.85}
+              className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-600 py-[15px]"
+            >
+              <MaterialIcons name="rate-review" size={18} color="white" />
+              <Text className="text-[15px] font-bold text-white">
+                Đánh giá bác sĩ
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -540,5 +583,3 @@ export function AppointmentDetailScreen() {
 }
 
 export default AppointmentDetailScreen;
-
-

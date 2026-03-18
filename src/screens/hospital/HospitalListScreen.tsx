@@ -14,6 +14,8 @@ import {
 import { HospitalCard } from '@/components/hospital/HospitalCard';
 import { HospitalFilterSheet } from '@/components/hospital/HospitalFilterSheet';
 import type { HospitalFilter } from '@/components/hospital/HospitalFilterSheet';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { theme } from '@/constants/theme';
 import { useHospitals } from '@/hooks/useHospitals';
 
 export function HospitalListScreen() {
@@ -52,106 +54,128 @@ export function HospitalListScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Stack.Screen options={{ headerShown: false }} />
+      <ScreenHeader title="Cơ sở y tế" onBack={() => router.back()} />
 
+      {/* Floating search bar (homepage style) */}
       <View
-        style={{
-          backgroundColor: '#0A7CFF',
-          paddingTop: 52,
-          paddingBottom: 16,
-          paddingHorizontal: 16,
-        }}
+        className="mx-4 -mt-7 h-14 flex-row items-center rounded-2xl bg-white px-3.5"
+        style={
+          {
+            ...theme.shadow.card,
+            marginTop: 20,
+          }
+        }
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <Pressable
-            onPress={() => router.back()}
-            style={{ padding: 8, marginLeft: -8, marginRight: 8 }}
-          >
-            <MaterialIcons name="arrow-back-ios" size={20} color="white" />
-          </Pressable>
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', flex: 1 }}>
-            Cơ sở y tế
-          </Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: 'white',
-            borderRadius: 12,
-            paddingHorizontal: 12,
-            height: 44,
-            gap: 8,
-          }}
-        >
-          <MaterialIcons name="search" size={20} color="#94A3B8" />
-          <TextInput
-            placeholder="Tên bệnh viện, phòng khám..."
-            placeholderTextColor="#94A3B8"
-            value={search}
-            onChangeText={handleSearchChange}
-            style={{ flex: 1, fontSize: 14, color: '#1F2937' }}
-            returnKeyType="search"
-          />
+        <MaterialIcons
+          name="search"
+          size={22}
+          color="#94A3B8"
+          style={{ marginRight: 8 }}
+        />
+        <TextInput
+          placeholder="Tên bệnh viện, phòng khám..."
+          placeholderTextColor="#94A3B8"
+          value={search}
+          onChangeText={handleSearchChange}
+          style={{ flex: 1, fontSize: 13, color: '#1F2937', fontWeight: '500' }}
+          returnKeyType="search"
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {search.length > 0 && (
             <Pressable
               onPress={() => {
                 setSearch('');
                 setSearchDebounced('');
               }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <MaterialIcons name="close" size={18} color="#94A3B8" />
             </Pressable>
           )}
+
+          <View style={{ width: 1, height: 24, backgroundColor: '#E2E8F0', marginHorizontal: 4 }} />
+
+          <Pressable
+            onPress={() => setFilterVisible(true)}
+            style={({ pressed }) => ({
+              padding: 4,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <View>
+              <MaterialCommunityIcons
+                name="tune-variant"
+                size={22}
+                color={hasFilters ? '#0A7CFF' : '#64748B'}
+              />
+              {hasFilters && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -2,
+                    width: 7,
+                    height: 7,
+                    borderRadius: 3.5,
+                    backgroundColor: '#EF4444',
+                    borderWidth: 1,
+                    borderColor: 'white',
+                  }}
+                />
+              )}
+            </View>
+          </Pressable>
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          gap: 8,
-          backgroundColor: 'white',
-          borderBottomWidth: 1,
-          borderBottomColor: '#F1F5F9',
-        }}
-      >
-        <Pressable
-          onPress={() => setFilterVisible(true)}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            backgroundColor: hasFilters ? '#EFF6FF' : '#F8FAFC',
-            borderRadius: 20,
-            paddingHorizontal: 14,
-            paddingVertical: 8,
-            borderWidth: 1,
-            borderColor: hasFilters ? '#0A7CFF' : '#E2E8F0',
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <MaterialCommunityIcons
-            name="tune-variant"
-            size={16}
-            color={hasFilters ? '#0A7CFF' : '#6B7280'}
-          />
-          <Text
+      {/* Tabs (card container) */}
+      <View className="mx-4 mt-3 rounded-2xl bg-white px-3 py-2.5" style={theme.shadow.card}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View
             style={{
-              fontSize: 13,
-              fontWeight: '600',
-              color: hasFilters ? '#0A7CFF' : '#6B7280',
+              flexDirection: 'row',
+              backgroundColor: '#F1F5F9',
+              borderRadius: 20,
+              padding: 3,
+              flex: 1,
+              maxWidth: 240,
             }}
           >
-            Bộ lọc{hasFilters ? ' •' : ''}
-          </Text>
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        {!hospitalsQuery.isLoading && (
-          <Text style={{ fontSize: 12, color: '#94A3B8' }}>{hospitals.length} cơ sở</Text>
-        )}
+            {(
+              [
+                { key: 'all', label: 'Tất cả' },
+                { key: 'hospital', label: 'Bệnh viện' },
+                { key: 'clinic', label: 'Phòng khám' },
+              ] as const
+            ).map((tab) => (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveFilter(prev => ({ ...prev, type: tab.key }))}
+                style={{
+                  flex: 1,
+                  paddingVertical: 7,
+                  borderRadius: 16,
+                  backgroundColor: activeFilter.type === tab.key ? '#FFFFFF' : 'transparent',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '600',
+                    color: activeFilter.type === tab.key ? '#0A7CFF' : '#64748B',
+                  }}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {!hospitalsQuery.isLoading && (
+            <Text style={{ fontSize: 12, color: '#94A3B8', marginLeft: 8 }}>{hospitals.length} cơ sở</Text>
+          )}
+        </View>
       </View>
 
       {hospitalsQuery.isLoading ? (

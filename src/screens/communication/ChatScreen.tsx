@@ -1,11 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { useMyChatRooms } from '@/hooks/useChat';
 import { useAuthStore } from '@/store/auth.store';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 // ─── Chat room card ────────────────────────────────────────────────────────────
 function ChatRoomCard({
@@ -109,14 +110,9 @@ export function ChatScreen() {
   const rooms = roomsQuery.data ?? [];
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1" >
       {/* HEADER */}
-      <View className="bg-blue-500 px-4 pb-4 pt-12">
-        <Text className="text-lg font-bold text-white">Tin nhắn</Text>
-        <Text className="mt-0.5 text-[13px] text-blue-100">
-          Chat trực tiếp với bác sĩ
-        </Text>
-      </View>
+      <ScreenHeader title="Chat" hideBack={true} />
 
       {rooms.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">

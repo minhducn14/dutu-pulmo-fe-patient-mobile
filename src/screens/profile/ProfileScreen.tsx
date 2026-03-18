@@ -2,7 +2,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -11,6 +18,7 @@ import { useLogout } from '@/hooks/useLogout';
 import { useMyPatient, useProfile } from '@/hooks/useProfile';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
+import theme from '@/constants/theme';
 
 function MenuItem({
   icon,
@@ -178,7 +186,17 @@ export function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-blue-500 pb-8">
+      <View
+        className="bg-primary pb-8"
+        style={{
+          paddingBottom: 38,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+        }}
+      >
         <ScreenHeader title="Tài khoản" hideBack />
       </View>
 
@@ -191,7 +209,8 @@ export function ProfileScreen() {
         style={{ marginTop: -48 }}
       >
         {/* PROFILE CARD */}
-        <View className="mx-4 overflow-hidden rounded-2xl bg-white shadow-sm"
+        <View
+          className="mx-4 overflow-hidden rounded-2xl bg-white shadow-sm"
           style={{
             shadowColor: '#000',
             shadowOpacity: 0.08,
@@ -226,7 +245,7 @@ export function ProfileScreen() {
               <TouchableOpacity
                 onPress={handleAvatarPress}
                 disabled={isUploadingAvatar}
-                className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full bg-blue-500 border-2 border-white"
+                className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-blue-500"
               >
                 <MaterialIcons name="camera-alt" size={14} color="white" />
               </TouchableOpacity>
@@ -248,14 +267,14 @@ export function ProfileScreen() {
               label="Hồ sơ"
               color="#0A7CFF"
             />
-            <View className="w-px self-stretch bg-slate-200 my-2" />
+            <View className="my-2 w-px self-stretch bg-slate-200" />
             <StatItem
               icon="medication"
               value={profile?.summary.totalPrescriptions ?? 0}
               label="Đơn thuốc"
               color="#16a34a"
             />
-            <View className="w-px self-stretch bg-slate-200 my-2" />
+            <View className="my-2 w-px self-stretch bg-slate-200" />
             <StatItem
               icon="monitor-heart"
               value={profile?.summary.totalVitalSigns ?? 0}
@@ -266,8 +285,8 @@ export function ProfileScreen() {
         </View>
 
         {/* ── MENU: Y TẾ ── */}
-        <View className="mt-5 mx-4">
-          <Text className="mb-2 text-[11px] font-bold tracking-[0.8px] text-slate-400 px-1">
+        <View className="mx-4 mt-5">
+          <Text className="mb-2 px-1 text-[11px] font-bold tracking-[0.8px] text-slate-400">
             HỒ SƠ Y TẾ
           </Text>
           <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -292,8 +311,8 @@ export function ProfileScreen() {
         </View>
 
         {/* ── MENU: TIỆN ÍCH ── */}
-        <View className="mt-4 mx-4">
-          <Text className="mb-2 text-[11px] font-bold tracking-[0.8px] text-slate-400 px-1">
+        <View className="mx-4 mt-4">
+          <Text className="mb-2 px-1 text-[11px] font-bold tracking-[0.8px] text-slate-400">
             TIỆN ÍCH
           </Text>
           <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -304,6 +323,22 @@ export function ProfileScreen() {
               title="Chỉnh sửa hồ sơ"
               subtitle="Cập nhật thông tin cá nhân"
               onPress={() => router.push('/edit-profile')}
+            />
+            <MenuItem
+              icon="favorite"
+              iconColor="#ef4444"
+              iconBg="#FEF2F2"
+              title="Danh sách yêu thích"
+              subtitle="Bác sĩ và bệnh viện đã lưu"
+              onPress={() => router.push('/favorites')}
+            />
+            <MenuItem
+              icon="rate-review"
+              iconColor="#4F46E5"
+              iconBg="#EEF2FF"
+              title="Đánh giá của tôi"
+              subtitle="Xem lịch sử đánh giá bác sĩ"
+              onPress={() => router.push('/my-reviews')}
             />
             <MenuItem
               icon="calendar-today"
@@ -334,8 +369,8 @@ export function ProfileScreen() {
         </View>
 
         {/* ── MENU: HỖ TRỢ ── */}
-        <View className="mt-4 mx-4">
-          <Text className="mb-2 text-[11px] font-bold tracking-[0.8px] text-slate-400 px-1">
+        <View className="mx-4 mt-4">
+          <Text className="mb-2 px-1 text-[11px] font-bold tracking-[0.8px] text-slate-400">
             HỖ TRỢ
           </Text>
           <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -368,7 +403,7 @@ export function ProfileScreen() {
         </View>
 
         {/* ── ĐĂNG XUẤT ── */}
-        <View className="mt-4 mx-4">
+        <View className="mx-4 mt-4">
           <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
             <MenuItem
               icon="logout"
@@ -393,4 +428,3 @@ export function ProfileScreen() {
 }
 
 export default ProfileScreen;
-

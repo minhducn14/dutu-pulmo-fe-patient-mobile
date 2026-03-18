@@ -30,11 +30,12 @@ import {
 import type { AppointmentTypeFilter } from '@/services/appointment.service';
 import { chatService } from '@/services/chat.service';
 import { useAuthStore } from '@/store/auth.store';
-import type {
-  DoctorResponseDto,
-  TimeSlotResponseDto,
-} from '@/types/generated/patient-api';
+type DoctorResponseDto = any;
+type TimeSlotResponseDto = any;
 import { getDoctorTitleLabel, getSpecialtyLabel } from '@/utils/doctor-display';
+import { useCheckFavoriteDoctor, useAddFavorite, useRemoveFavorite } from '@/hooks/useFavorites';
+import { useDoctorReviews } from '@/hooks/useReviews';
+import { ReviewItem } from '@/components/review/ReviewItem';
 
 const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const DATE_WINDOW_DAYS = 14;
@@ -102,12 +103,18 @@ export function DoctorDetailScreen() {
   );
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
+
+  const doctorQuery = usePublicDoctorDetail(doctorId ?? '');
+  const { data: favoriteData } = useCheckFavoriteDoctor(doctorId ?? '');
+  const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
+  const reviewsQuery = useDoctorReviews(doctorId ?? '');
+  console.log(reviewsQuery.data);
+  const isSaved = !!favoriteData;
   const appointmentTypeFilter: AppointmentTypeFilter =
     activeTab === 'consultation' ? 'online' : 'offline';
 
-  const doctorQuery = usePublicDoctorDetail(doctorId ?? '');
   const slotsQuery = useDoctorAvailableSlots(
     doctorId ?? '',
     selectedDate,
@@ -241,7 +248,13 @@ export function DoctorDetailScreen() {
         isSaved={isSaved}
         canChat={canChat}
         onBack={() => router.back()}
-        onToggleSave={() => setIsSaved((v) => !v)}
+        onToggleSave={() => {
+          if (isSaved && favoriteData?.id) {
+            removeFavorite.mutate(favoriteData.id);
+          } else if (doctorId) {
+            addFavorite.mutate({ doctorId });
+          }
+        }}
         onChat={handleChat}
       />
 
@@ -425,6 +438,22 @@ export function DoctorDetailScreen() {
               <InfoList items={awards} />
             </AccordionItem>
           )}
+
+          <AccordionItem icon="rate-review" title={`Đánh giá (${reviewsQuery.data?.length ?? 0})`}>
+            {reviewsQuery.isLoading ? (
+              <Loading fullscreen={false} />
+            ) : reviewsQuery.data && reviewsQuery.data.length > 0 ? (
+              <View className="px-1">
+                {reviewsQuery.data.map((r) => (
+                  <ReviewItem key={r.id} review={r} />
+                ))}
+              </View>
+            ) : (
+              <Text className="py-4 text-center text-sm text-gray-400">
+                Chưa có đánh giá nào cho bác sĩ này.
+              </Text>
+            )}
+          </AccordionItem>
         </View>
       </ScrollView>
 

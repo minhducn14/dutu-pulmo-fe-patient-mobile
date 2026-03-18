@@ -5,10 +5,12 @@ import type { HospitalQueryDto } from '@/types/hospital.types';
 export const hospitalKeys = {
   all: ['hospitals'] as const,
   lists: () => [...hospitalKeys.all, 'list'] as const,
-  list: (params?: HospitalQueryDto) => [...hospitalKeys.lists(), params] as const,
+  list: (params?: HospitalQueryDto) =>
+    [...hospitalKeys.lists(), params] as const,
   details: () => [...hospitalKeys.all, 'detail'] as const,
   detail: (id: string) => [...hospitalKeys.details(), id] as const,
-  doctors: (id: string, page?: number, limit?: number) => [...hospitalKeys.detail(id), 'doctors', { page, limit }] as const,
+  doctors: (id: string, page?: number, limit?: number) =>
+    [...hospitalKeys.detail(id), 'doctors', { page, limit }] as const,
   cities: () => [...hospitalKeys.all, 'cities'] as const,
 };
 

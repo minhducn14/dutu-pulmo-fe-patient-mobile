@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { Loading } from '@/components/ui/Loading';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StepBar } from '@/components/appointment/StepBar';
 import { useAppointmentDetail } from '@/hooks/useAppointments';
 import { useCreatePayment, usePaymentStatusOnce } from '@/hooks/usePayment';
@@ -117,18 +118,7 @@ export function PaymentScreen() {
   // ══════════════════════════════════════════════════════════════════════
   return (
     <View className="flex-1 bg-slate-50">
-      {/* HEADER */}
-      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          className="rounded-full p-1"
-        >
-          <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-white">Thanh toán</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="Thanh toán" onBack={() => router.back()} />
 
       {/* STEP BAR */}
       <StepBar current={3} />

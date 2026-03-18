@@ -35,6 +35,8 @@ export function ScreenHeader({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
       }}
     >
       {!hideBack ? (
@@ -46,7 +48,7 @@ export function ScreenHeader({
           <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
         </Pressable>
       ) : (
-        <View style={{ width: 30 }} />
+        <View style={{ minWidth: 30 }} />
       )}
 
       <Text
@@ -63,7 +65,9 @@ export function ScreenHeader({
         {title}
       </Text>
 
-      <View style={{ width: 30, alignItems: 'flex-end' }}>{rightSlot ?? null}</View>
+      <View style={{ minWidth: 30, alignItems: 'flex-end' }}>
+        {rightSlot ?? null}
+      </View>
     </View>
   );
 }

@@ -15,6 +15,7 @@ import {
 import RenderHtml from 'react-native-render-html';
 
 import { Loading } from '@/components/ui/Loading';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StepBar } from '@/components/appointment/StepBar';
 import { SupportItem } from '@/components/appointment/SupportItem';
 import { InfoRowVertical, InfoRowVerticalTwo } from '@/components/appointment/InfoRowVertical';
@@ -118,24 +119,16 @@ export function ConfirmAppointmentScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {/* HEADER */}
-      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          className="rounded-full p-1"
-        >
-          <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-white">Xác nhận thông tin</Text>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          className="flex-row items-center gap-1"
-        >
-          <MaterialIcons name="help-outline" size={18} color="white" />
-          <Text className="text-[13px] font-medium text-white">Hỗ trợ</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Xác nhận thông tin"
+        onBack={() => router.back()}
+        rightSlot={
+          <TouchableOpacity activeOpacity={0.7} className="flex-row items-center gap-1">
+            <MaterialIcons name="help-outline" size={18} color="white" />
+            <Text className="text-[13px] font-medium text-white">Hỗ trợ</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* STEP BAR */}
       <StepBar current={2} />

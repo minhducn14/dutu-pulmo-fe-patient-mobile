@@ -2,12 +2,19 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, ScrollView, Image, Pressable, Linking } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useHospitalDetail, useHospitalDoctors } from '@/hooks/useHospitals';
+import { useCheckFavoriteHospital, useAddFavorite, useRemoveFavorite } from '@/hooks/useFavorites';
 
 export function HospitalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const hospitalQuery = useHospitalDetail(id);
   const doctorsQuery = useHospitalDoctors(id, 1, 10);
+
+  const { data: favoriteData } = useCheckFavoriteHospital(id ?? '');
+  const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
+
+  const isSaved = !!favoriteData;
 
   const h = hospitalQuery.data;
   const logo = h?.logoUrl ?? 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png';
@@ -29,9 +36,32 @@ export function HospitalDetailScreen() {
           paddingHorizontal: 16,
         }}
       >
-        <Pressable onPress={() => router.back()} style={{ padding: 8, marginLeft: -8, marginBottom: 8 }}>
-          <MaterialIcons name="arrow-back-ios" size={20} color="white" />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <Pressable onPress={() => router.back()} style={{ padding: 8, marginLeft: -8 }}>
+            <MaterialIcons name="arrow-back-ios" size={20} color="white" />
+          </Pressable>
+          
+          <Pressable 
+            onPress={() => {
+              if (isSaved && favoriteData?.id) {
+                removeFavorite.mutate(favoriteData.id);
+              } else if (id) {
+                addFavorite.mutate({ hospitalId: id });
+              }
+            }}
+            style={{ padding: 8, marginRight: -8, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          >
+            <MaterialIcons 
+              name={isSaved ? "favorite" : "favorite-border"} 
+              size={22} 
+              color={isSaved ? "#FDE047" : "white"} 
+            />
+            <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
+              {isSaved ? 'Đã lưu' : 'Lưu lại'}
+            </Text>
+          </Pressable>
+        </View>
+
         <Text style={{ color: 'white', fontSize: 20, fontWeight: '700', lineHeight: 28 }}>
           {hospitalQuery.isLoading ? 'Đang tải...' : h?.name ?? 'Cơ sở y tế'}
         </Text>

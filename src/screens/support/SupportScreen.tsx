@@ -12,6 +12,7 @@ import { useState } from 'react';
 
 import { Modal } from '@/components/ui/Modal';
 import { useAuthStore } from '@/store/auth.store';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 // ─── Danh mục hỗ trợ ──────────────────────────────────────────────────────────
 const SUPPORT_CATEGORIES = [
@@ -19,7 +20,7 @@ const SUPPORT_CATEGORIES = [
     icon: 'calendar-today' as const,
     label: 'Đặt lịch\nkhám',
     sublabel: 'TELEHEALTH',
-    color: '#2563EB',
+    color: '#0A7CFF',
     bg: '#EFF6FF',
     border: '#BFDBFE',
   },
@@ -56,7 +57,7 @@ const FAQ_ITEMS = [
     title: 'Cách đặt lịch khám?',
     description:
       'Chọn bác sĩ → Chọn khung giờ → Xác nhận → Thanh toán. Chỉ vài bước đơn giản.',
-    color: '#2563EB',
+    color: '#0A7CFF',
     bg: '#EFF6FF',
   },
   {
@@ -88,7 +89,7 @@ const FAQ_ITEMS = [
     title: 'Xem hồ sơ y tế?',
     description:
       'Vào Tài khoản → Hồ sơ y tế để xem toàn bộ lịch sử khám và đơn thuốc.',
-    color: '#2563EB',
+    color: '#0A7CFF',
     bg: '#EFF6FF',
   },
   {
@@ -124,21 +125,7 @@ export function SupportScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       {/* ── HEADER ── */}
-      <View
-        style={{
-          backgroundColor: '#2563EB',
-          paddingTop: Platform.OS === 'ios' ? 52 : 44,
-          paddingBottom: 20,
-          paddingHorizontal: 20,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
-          Hỗ trợ
-        </Text>
-        <Text style={{ color: '#BFDBFE', fontSize: 13, marginTop: 2 }}>
-          Chúng tôi luôn sẵn sàng giúp bạn
-        </Text>
-      </View>
+      <ScreenHeader title="Hỗ trợ" hideBack={true} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -172,7 +159,7 @@ export function SupportScreen() {
                 justifyContent: 'center',
               }}
             >
-              <MaterialIcons name="support-agent" size={28} color="#2563EB" />
+              <MaterialIcons name="support-agent" size={28} color="#0A7CFF" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: '#0F172A' }}>
@@ -207,7 +194,7 @@ export function SupportScreen() {
                 marginTop: 1,
               }}
             >
-              <MaterialIcons name="medical-services" size={16} color="#2563EB" />
+              <MaterialIcons name="medical-services" size={16} color="#0A7CFF" />
             </View>
             <Text style={{ flex: 1, fontSize: 13, color: '#475569', lineHeight: 20 }}>
               Nếu bạn cần hỗ trợ đặt lịch khám, tư vấn y tế hay hướng dẫn hệ
@@ -258,7 +245,7 @@ export function SupportScreen() {
             onPress={handleChat}
             activeOpacity={0.85}
             style={{
-              backgroundColor: '#2563EB',
+              backgroundColor: '#0A7CFF',
               borderRadius: 14,
               paddingVertical: 15,
               flexDirection: 'row',
@@ -266,7 +253,7 @@ export function SupportScreen() {
               justifyContent: 'center',
               gap: 8,
               marginBottom: 10,
-              shadowColor: '#2563EB',
+              shadowColor: '#0A7CFF',
               shadowOpacity: 0.3,
               shadowOffset: { width: 0, height: 4 },
               shadowRadius: 10,
@@ -506,7 +493,7 @@ export function SupportScreen() {
             © 2025 DuTu Health. All rights reserved.
           </Text>
         </View>
-            </ScrollView>
+      </ScrollView>
 
       <Modal
         visible={selectedCategoryIndex !== null}
@@ -534,7 +521,7 @@ export function SupportScreen() {
               <MaterialIcons
                 name={selectedCategory?.icon ?? 'help-outline'}
                 size={20}
-                color={selectedCategory?.color ?? '#2563EB'}
+                color={selectedCategory?.color ?? '#0A7CFF'}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -566,7 +553,7 @@ export function SupportScreen() {
                 justifyContent: 'center',
                 flexDirection: 'row',
                 gap: 6,
-                backgroundColor: '#2563EB',
+                backgroundColor: '#0A7CFF',
               }}
             >
               <MaterialIcons name="chat-bubble" size={16} color="white" />

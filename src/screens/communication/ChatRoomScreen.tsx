@@ -240,7 +240,7 @@ export function ChatRoomScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* HEADER */}
-      <View className="flex-row items-center gap-3 bg-blue-500 px-4 pb-4 pt-12">
+      <View className="flex-row items-center gap-3 bg-primary px-4 pb-4 pt-12">
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -322,9 +322,8 @@ export function ChatRoomScreen() {
 
         {/* Input bar */}
         <View
-          className={`flex-row items-end gap-2 border-t border-slate-100 bg-white px-3 pt-3 ${
-            Platform.OS === 'ios' ? 'pb-8' : 'pb-3'
-          }`}
+          className={`flex-row items-end gap-2 border-t border-slate-100 bg-white px-3 pt-3 ${Platform.OS === 'ios' ? 'pb-8' : 'pb-3'
+            }`}
           style={{
             shadowColor: '#000',
             shadowOpacity: 0.06,
@@ -352,18 +351,17 @@ export function ChatRoomScreen() {
             onPress={onSend}
             disabled={!content.trim() || sendMutation.isPending}
             activeOpacity={0.85}
-            className={`h-[44px] w-[44px] items-center justify-center rounded-full ${
-              content.trim() ? 'bg-blue-500' : 'bg-slate-200'
-            }`}
+            className={`h-[44px] w-[44px] items-center justify-center rounded-full ${content.trim() ? 'bg-blue-500' : 'bg-slate-200'
+              }`}
             style={
               content.trim()
                 ? {
-                    shadowColor: '#0A7CFF',
-                    shadowOpacity: 0.3,
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowRadius: 6,
-                    elevation: 4,
-                  }
+                  shadowColor: '#0A7CFF',
+                  shadowOpacity: 0.3,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowRadius: 6,
+                  elevation: 4,
+                }
                 : undefined
             }
           >

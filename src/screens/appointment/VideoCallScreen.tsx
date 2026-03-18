@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   SafeAreaView,
@@ -417,6 +418,10 @@ export function VideoCallScreen() {
       );
     } catch (e) {
       logError('handleJoin', 'error during join', e);
+      Alert.alert(
+        'Chưa thể tham gia',
+        'Vui lòng đợi trong giây lát.',
+      );
       setAccessState('idle');
     } finally {
       setIsJoiningRoom(false);
@@ -724,8 +729,8 @@ export function VideoCallScreen() {
       )}
 
       {/* ── Local video (picture-in-picture) ── */}
-      {localParticipant?.videoTrack ? (
-        <View style={styles.localVideoContainer}>
+      <View style={styles.localVideoContainer}>
+        {localParticipant?.videoTrack ? (
           <DailyMediaView
             videoTrack={localParticipant.videoTrack}
             audioTrack={null}
@@ -733,8 +738,16 @@ export function VideoCallScreen() {
             style={styles.localVideo}
             objectFit="cover"
           />
-        </View>
-      ) : null}
+        ) : (
+          <View style={styles.localCamOffContainer}>
+            <View style={styles.localAvatarCircle}>
+              <Text style={styles.localAvatarInitial}>
+                {fullName ? fullName.charAt(0).toUpperCase() : '?'}
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* ── Controls ── */}
       <SafeAreaView style={styles.controlsWrapper}>
@@ -1044,6 +1057,7 @@ const styles = StyleSheet.create({
   localVideo: {
     flex: 1,
   },
+  // ── Controls bar ──
   controlsWrapper: {
     position: 'absolute',
     bottom: 0,
@@ -1081,6 +1095,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 8,
+  },
+  localCamOffContainer: {
+    flex: 1,
+    backgroundColor: '#2c3e50',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  localAvatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3A6EA5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  localAvatarInitial: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
 
