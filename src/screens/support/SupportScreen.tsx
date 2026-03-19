@@ -17,6 +17,15 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 // ─── Danh mục hỗ trợ ──────────────────────────────────────────────────────────
 const SUPPORT_CATEGORIES = [
   {
+    icon: 'auto-awesome' as const,
+    label: 'Hỏi Trợ lý\nAI',
+    sublabel: 'TƯ VẤN 24/7',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    border: '#DDD6FE',
+    route: '/support/ai-chatbot' as const,
+  },
+  {
     icon: 'calendar-today' as const,
     label: 'Đặt lịch\nkhám',
     sublabel: 'TELEHEALTH',
@@ -39,14 +48,6 @@ const SUPPORT_CATEGORIES = [
     color: '#EA580C',
     bg: '#FFF7ED',
     border: '#FED7AA',
-  },
-  {
-    icon: 'payment' as const,
-    label: 'Thanh toán\n& hoàn tiền',
-    sublabel: 'HOÁ ĐƠN',
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-    border: '#DDD6FE',
   },
 ];
 
@@ -315,7 +316,13 @@ export function SupportScreen() {
             {SUPPORT_CATEGORIES.map((cat, idx) => (
               <TouchableOpacity
                 key={idx}
-                onPress={() => setSelectedCategoryIndex(idx)}
+                onPress={() => {
+                  if (cat.route) {
+                    router.push(cat.route as any);
+                  } else {
+                    setSelectedCategoryIndex(idx);
+                  }
+                }}
                 activeOpacity={0.85}
                 style={{
                   width: '47.5%',
