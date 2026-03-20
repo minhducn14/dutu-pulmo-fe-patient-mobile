@@ -1,19 +1,25 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import { useRef, useState, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Alert,
+  FlatList,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import { z } from 'zod';
 
 import { useCreateReport } from '@/hooks/useReports';
+import { usePublicDoctors, useAppointments } from '@/hooks/useAppointments';
+import { Modal } from '@/components/ui/Modal';
+import { theme } from '@/constants/theme';
 
 const REPORT_TYPES = [
   {
@@ -50,10 +56,63 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+// ─── LOCAL COMPONENTS ────────────────────────────────────────────────────────
+function SelectionCard({
+  label,
+  value,
+  placeholder,
+  onPress,
+  icon,
+}: {
+  label: string;
+  value?: string;
+  placeholder: string;
+  onPress: () => void;
+  icon: string;
+}) {
+  return (
+    <View className="mb-5">
+      <Text className="mb-2 text-[15px] font-bold text-slate-900">{label}</Text>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3.5"
+      >
+        <View className="flex-row items-center gap-2.5">
+          <MaterialIcons name={icon as any} size={18} color={value ? '#0A7CFF' : '#94a3b8'} />
+          <Text
+            className={`text-sm ${value ? 'font-semibold text-slate-900' : 'text-slate-400'}`}
+            numberOfLines={1}
+          >
+            {value || placeholder}
+          </Text>
+        </View>
+        <MaterialIcons name="unfold-more" size={18} color="#94a3b8" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 export function ReportIssueScreen() {
   const router = useRouter();
   const createMutation = useCreateReport();
+
+  // Pickers State
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [showAptModal, setShowAptModal] = useState(false);
+  const [docSearch, setDocSearch] = useState('');
+  const [docSearchDebounced, setDocSearchDebounced] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [selectedDocLabel, setSelectedDocLabel] = useState('');
+  const [selectedAptLabel, setSelectedAptLabel] = useState('');
+
+  // Hooks
+  const doctorsQuery = usePublicDoctors({
+    page: 1, limit: 10, search: docSearchDebounced || undefined
+  });
+  const appointmentsQuery = useAppointments({ limit: 50 });
 
   const {
     control,
@@ -73,6 +132,11 @@ export function ReportIssueScreen() {
 
   const selectedType = watch('reportType');
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDocSearchDebounced(docSearch), 500);
+  }, [docSearch]);
+
   const onSubmit = (values: FormData) => {
     createMutation.mutate(
       {
@@ -87,8 +151,9 @@ export function ReportIssueScreen() {
             { text: 'OK', onPress: () => router.replace('/reports') },
           ]);
         },
-        onError: () => {
-          Alert.alert('Lỗi', 'Không thể gửi báo cáo. Vui lòng thử lại.');
+        onError: (error: any) => {
+          const errMsg = error?.response?.data?.message || 'Không thể gửi báo cáo. Vui lòng thử lại.';
+          Alert.alert('Lỗi', typeof errMsg === 'string' ? errMsg : 'Có lỗi xảy ra');
         },
       },
     );
@@ -137,7 +202,13 @@ export function ReportIssueScreen() {
               return (
                 <TouchableOpacity
                   key={type.value}
-                  onPress={() => setValue('reportType', type.value as ReportTypeValue)}
+                  onPress={() => {
+                    setValue('reportType', type.value as ReportTypeValue);
+                    setValue('doctorId', '');
+                    setValue('appointmentId', '');
+                    setSelectedDocLabel('');
+                    setSelectedAptLabel('');
+                  }}
                   activeOpacity={0.7}
                   className={`flex-row items-center gap-3 rounded-2xl border px-4 py-[14px] ${
                     isSelected
@@ -194,54 +265,26 @@ export function ReportIssueScreen() {
           </View>
         </View>
 
-        {/* ── ID BÁC SĨ (nếu chọn loại doctor) ── */}
+        {/* SELECT BÁC SĨ */}
         {selectedType === 'doctor' && (
-          <View className="mb-5">
-            <Text className="mb-2 text-[15px] font-bold text-slate-900">
-              Mã bác sĩ{' '}
-              <Text className="text-[13px] font-normal text-slate-400">
-                (không bắt buộc)
-              </Text>
-            </Text>
-            <Controller
-              control={control}
-              name="doctorId"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="Nhập mã bác sĩ (UUID)..."
-                  placeholderTextColor="#94a3b8"
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-900"
-                />
-              )}
-            />
-          </View>
+          <SelectionCard
+            label="Chọn bác sĩ"
+            value={selectedDocLabel}
+            placeholder="Tìm kiếm bác sĩ..."
+            icon="person"
+            onPress={() => setShowDocModal(true)}
+          />
         )}
 
-        {/* ── ID LỊCH KHÁM (nếu chọn loại appointment) ── */}
+        {/* SELECT LỊCH KHÁM */}
         {selectedType === 'appointment' && (
-          <View className="mb-5">
-            <Text className="mb-2 text-[15px] font-bold text-slate-900">
-              Mã lịch khám{' '}
-              <Text className="text-[13px] font-normal text-slate-400">
-                (không bắt buộc)
-              </Text>
-            </Text>
-            <Controller
-              control={control}
-              name="appointmentId"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="Nhập mã lịch khám (UUID)..."
-                  placeholderTextColor="#94a3b8"
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-slate-900"
-                />
-              )}
-            />
-          </View>
+          <SelectionCard
+            label="Chọn lịch khám"
+            value={selectedAptLabel}
+            placeholder="Chọn 1 lịch khám gần đây..."
+            icon="event"
+            onPress={() => setShowAptModal(true)}
+          />
         )}
 
         {/* ── NỘI DUNG BÁO CÁO ── */}
@@ -307,6 +350,91 @@ export function ReportIssueScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* DOCTOR MODAL */}
+      <Modal visible={showDocModal} onRequestClose={() => setShowDocModal(false)}>
+        <View className="h-[80%] w-full rounded-3xl bg-white p-4">
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-slate-900">Chọn bác sĩ</Text>
+            <TouchableOpacity onPress={() => setShowDocModal(false)}>
+              <MaterialIcons name="close" size={24} color="#64748b" />
+            </TouchableOpacity>
+          </View>
+          
+          <View className="mb-4 flex-row items-center rounded-xl bg-slate-100 px-3 py-2">
+            <MaterialIcons name="search" size={20} color="#94a3b8" />
+            <TextInput
+              placeholder="Tìm tên bác sĩ..."
+              value={docSearch}
+              onChangeText={setDocSearch}
+              className="ml-2 flex-1 py-1 text-sm text-slate-900"
+            />
+          </View>
+
+          {doctorsQuery.isLoading ? <ActivityIndicator color="#0A7CFF" className="mt-10" /> : (
+            <FlatList
+              data={doctorsQuery.data?.items || []}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setValue('doctorId', item.id);
+                    setSelectedDocLabel(`${item.title || 'BS.'} ${item.fullName}`);
+                    setShowDocModal(false);
+                  }}
+                  className="mb-2 flex-row items-center gap-3 rounded-2xl border border-slate-50 bg-slate-50/50 p-3"
+                >
+                  <View className="h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                    <MaterialIcons name="person" size={24} color="#0A7CFF" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-bold text-slate-900">{item.title || 'BS.'} {item.fullName}</Text>
+                    <Text className="text-xs text-slate-500">{item.specialty || 'Chuyên khoa'}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* APPOINTMENT MODAL */}
+      <Modal visible={showAptModal} onRequestClose={() => setShowAptModal(false)}>
+        <View className="max-h-[70%] w-full rounded-3xl bg-white p-4">
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-slate-900">Chọn lịch khám</Text>
+            <TouchableOpacity onPress={() => setShowAptModal(false)}>
+              <MaterialIcons name="close" size={24} color="#64748b" />
+            </TouchableOpacity>
+          </View>
+
+          {appointmentsQuery.isLoading ? <ActivityIndicator color="#0A7CFF" className="mt-10" /> : (
+            <FlatList
+              data={appointmentsQuery.data?.items || []}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={<Text className="py-10 text-center text-slate-400">Không có lịch khám gần đây</Text>}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setValue('appointmentId', item.id);
+                    setSelectedAptLabel(`#${item.appointmentNumber} - ${new Date(item.scheduledAt).toLocaleDateString('vi-VN')}`);
+                    setShowAptModal(false);
+                  }}
+                  className="mb-2 rounded-2xl border border-slate-50 bg-slate-50/50 p-4"
+                >
+                  <View className="mb-1 flex-row items-center justify-between">
+                    <Text className="text-sm font-bold text-slate-900">#{item.appointmentNumber}</Text>
+                    <Text className="text-xs text-slate-400">{new Date(item.scheduledAt || '').toLocaleDateString('vi-VN')}</Text>
+                  </View>
+                  <Text className="text-xs text-slate-600">Bác sĩ: {item.doctor?.fullName}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }

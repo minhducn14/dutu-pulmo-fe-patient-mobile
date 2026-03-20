@@ -18,6 +18,7 @@ export const TypingEffect: React.FC<TypingEffectProps> = ({
 
   useEffect(() => {
     setDisplayedText('');
+
     const chars = [...text];
     let index = 0;
 

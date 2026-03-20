@@ -356,6 +356,11 @@ export function VideoCallScreen() {
   const callLeaveApiBestEffort = useCallback(async () => {
     if (!resolvedAppointmentId) return;
 
+    if (!isJoined) {
+      log('callLeaveApiBestEffort', 'skip — never joined');
+      return;
+    }
+
     if (hasCalledLeaveApiRef.current) {
       log('callLeaveApiBestEffort', 'already called — skipping duplicate');
       return;

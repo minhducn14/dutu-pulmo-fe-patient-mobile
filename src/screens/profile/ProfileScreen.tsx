@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLogout } from '@/hooks/useLogout';
+import { useNotificationUnreadCount, useTestPushNotification } from '@/hooks/useNotifications';
 import { useMyPatient, useProfile } from '@/hooks/useProfile';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -112,6 +113,9 @@ export function ProfileScreen() {
 
   const myPatientQuery = useMyPatient();
   const profileQuery = useProfile();
+  const testPushMutation = useTestPushNotification();
+  const { data: unreadData } = useNotificationUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   if (myPatientQuery.isLoading || profileQuery.isLoading) {
     return <Loading label="Đang tải hồ sơ..." />;
@@ -362,7 +366,25 @@ export function ProfileScreen() {
               iconBg="#FFFBEB"
               title="Thông báo"
               subtitle="Cập nhật từ hệ thống"
+              badge={unreadCount}
               onPress={() => router.push('/notifications')}
+            />
+            <MenuItem
+              icon="notifications-active"
+              iconColor="#10b981"
+              iconBg="#ecfdf5"
+              title="Test Push Notification"
+              subtitle="Gửi thông báo thử nghiệm"
+              onPress={async () => {
+                try {
+                  await testPushMutation.mutateAsync({
+                    title: '🔔 Thông báo thử nghiệm',
+                    content: 'Đây là nội dung thử nghiệm từ hệ thống Mobile App.',
+                  });
+                } catch (error) {
+                  console.warn('Test push failed:', error);
+                }
+              }}
               isLast
             />
           </View>

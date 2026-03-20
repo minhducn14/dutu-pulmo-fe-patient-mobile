@@ -150,6 +150,10 @@ export function AppointmentDetailScreen() {
   };
 
   const onConfirmCancel = () => {
+    if (!reason) {
+      Alert.alert('Lỗi', 'Vui lòng nhập lý do hủy.');
+      return;
+    }
     cancelMutation.mutate(
       {
         appointmentId,
@@ -184,7 +188,7 @@ export function AppointmentDetailScreen() {
   const statusConfig =
     APPOINTMENT_STATUS_CONFIG[appointment.status] ??
     FALLBACK_APPOINTMENT_STATUS;
-  const canCancel = ['PENDING', 'PENDING_PAYMENT'].includes(appointment.status);
+  const canCancel = ['PENDING', 'PENDING_PAYMENT', 'CONFIRMED'].includes(appointment.status);
   const canJoinVideo = ['CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'].includes(
     appointment.status,
   );
