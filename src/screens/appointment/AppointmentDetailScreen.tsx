@@ -188,13 +188,38 @@ export function AppointmentDetailScreen() {
   const statusConfig =
     APPOINTMENT_STATUS_CONFIG[appointment.status] ??
     FALLBACK_APPOINTMENT_STATUS;
-  const canCancel = ['PENDING', 'PENDING_PAYMENT', 'CONFIRMED'].includes(appointment.status);
+  const isPendingPayment = appointment.status === 'PENDING_PAYMENT';
+  const isCancelled = appointment.status === 'CANCELLED';
   const canJoinVideo = ['CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'].includes(
     appointment.status,
   );
-  const isPendingPayment = appointment.status === 'PENDING_PAYMENT';
-  const isCancelled = appointment.status === 'CANCELLED';
   const isVideoAppointment = appointment.appointmentType === 'VIDEO';
+
+  const PATIENT_CANCEL_BEFORE_MINUTES = 4 * 60; // 240 phút
+  const scheduledAt = new Date(appointment.scheduledAt);
+  const now = new Date();
+  const minutesUntilStart =
+    (scheduledAt.getTime() - now.getTime()) / (1000 * 60);
+
+  const isPendingStatus = ['PENDING', 'PENDING_PAYMENT'].includes(
+    appointment.status,
+  );
+  const isConfirmed = appointment.status === 'CONFIRMED';
+  const canCancelConfirmed =
+    isConfirmed && minutesUntilStart >= PATIENT_CANCEL_BEFORE_MINUTES;
+  const canCancel = isPendingStatus || canCancelConfirmed;
+
+  const showCancelWarning =
+    isConfirmed &&
+    minutesUntilStart < PATIENT_CANCEL_BEFORE_MINUTES + 60 &&
+    minutesUntilStart >= PATIENT_CANCEL_BEFORE_MINUTES;
+
+  const hoursUntilDeadline = Math.floor(
+    (minutesUntilStart - PATIENT_CANCEL_BEFORE_MINUTES) / 60,
+  );
+  const minutesUntilDeadline = Math.floor(
+    (minutesUntilStart - PATIENT_CANCEL_BEFORE_MINUTES) % 60,
+  );
 
   const scheduledDate = new Date(appointment.scheduledAt);
   const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -456,7 +481,9 @@ export function AppointmentDetailScreen() {
             <View className="gap-2">
               <TouchableOpacity
                 onPress={() =>
-                  router.push(`/appointments/payment?appointmentId=${appointmentId}`)
+                  router.push(
+                    `/appointments/payment?appointmentId=${appointmentId}`,
+                  )
                 }
                 activeOpacity={0.85}
                 className="flex-row items-center justify-center gap-2 rounded-[14px] bg-amber-500 py-[15px]"
@@ -466,20 +493,73 @@ export function AppointmentDetailScreen() {
                   Thanh toán ngay
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setCancelModalOpen(true)}
-                activeOpacity={0.85}
-                className="items-center justify-center rounded-[14px] border border-red-500 py-[14px]"
-                style={{ borderWidth: 1.5 }}
-              >
-                <Text className="text-[15px] font-bold text-red-500">
-                  Hủy lịch
-                </Text>
-              </TouchableOpacity>
+
+              {canCancel && (
+                <TouchableOpacity
+                  onPress={() => setCancelModalOpen(true)}
+                  activeOpacity={0.85}
+                  className="items-center justify-center rounded-[14px] border border-red-500 py-[14px]"
+                  style={{ borderWidth: 1.5 }}
+                >
+                  <Text className="text-[15px] font-bold text-red-500">
+                    Hủy lịch
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : isVideoAppointment ? (
             <View className="gap-2">
-              {canJoinVideo ? (
+              {/* 1. Warning (nếu có) */}
+              {isConfirmed && !canCancelConfirmed && !isCancelled && (
+                <View className="flex-row items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2">
+                  <MaterialIcons
+                    name="schedule"
+                    size={15}
+                    color="#f97316"
+                    style={{ marginTop: 1 }}
+                  />
+                  <Text className="flex-1 text-xs leading-[18px] text-orange-700">
+                    Đã quá thời hạn hủy lịch (trước 4 tiếng).
+                  </Text>
+                </View>
+              )}
+
+              {showCancelWarning && (
+                <View className="flex-row items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2">
+                  <MaterialIcons
+                    name="warning-amber"
+                    size={15}
+                    color="#d97706"
+                    style={{ marginTop: 1 }}
+                  />
+                  <Text className="flex-1 text-xs leading-[18px] text-yellow-800">
+                    Còn{' '}
+                    <Text className="font-bold">
+                      {hoursUntilDeadline > 0
+                        ? `${hoursUntilDeadline}h ${minutesUntilDeadline}p`
+                        : `${minutesUntilDeadline} phút`}
+                    </Text>{' '}
+                    để hủy lịch này.
+                  </Text>
+                </View>
+              )}
+
+              {/* 2. Nút hủy (nếu được phép) */}
+              {canCancel && (
+                <TouchableOpacity
+                  onPress={() => setCancelModalOpen(true)}
+                  activeOpacity={0.85}
+                  className="items-center justify-center rounded-[14px] border border-red-500 py-[14px]"
+                  style={{ borderWidth: 1.5 }}
+                >
+                  <Text className="text-[15px] font-bold text-red-500">
+                    Hủy lịch
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* 3. Action chính — join video / đánh giá */}
+              {canJoinVideo && (
                 <TouchableOpacity
                   onPress={() =>
                     router.push({
@@ -495,19 +575,9 @@ export function AppointmentDetailScreen() {
                     Vào video call
                   </Text>
                 </TouchableOpacity>
-              ) : null}
-              {canCancel ? (
-                <TouchableOpacity
-                  onPress={() => setCancelModalOpen(true)}
-                  activeOpacity={0.85}
-                  className="items-center justify-center rounded-[14px] border border-red-500 py-[14px]"
-                  style={{ borderWidth: 1.5 }}
-                >
-                  <Text className="text-[15px] font-bold text-red-500">
-                    Hủy lịch
-                  </Text>
-                </TouchableOpacity>
-              ) : appointment.status === 'COMPLETED' ? (
+              )}
+
+              {appointment.status === 'COMPLETED' && (
                 <TouchableOpacity
                   onPress={() =>
                     router.push({
@@ -523,36 +593,80 @@ export function AppointmentDetailScreen() {
                     Đánh giá bác sĩ
                   </Text>
                 </TouchableOpacity>
-              ) : null}
+              )}
             </View>
-          ) : canCancel ? (
-            <TouchableOpacity
-              onPress={() => setCancelModalOpen(true)}
-              activeOpacity={0.85}
-              className="items-center justify-center rounded-[14px] border border-red-500 py-[15px]"
-              style={{ borderWidth: 1.5 }}
-            >
-              <Text className="text-[15px] font-bold text-red-500">
-                Huỷ lịch
-              </Text>
-            </TouchableOpacity>
-          ) : appointment.status === 'COMPLETED' ? (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: '/appointments/review',
-                  params: { appointmentId },
-                })
-              }
-              activeOpacity={0.85}
-              className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-600 py-[15px]"
-            >
-              <MaterialIcons name="rate-review" size={18} color="white" />
-              <Text className="text-[15px] font-bold text-white">
-                Đánh giá bác sĩ
-              </Text>
-            </TouchableOpacity>
-          ) : null}
+          ) : (
+            /* Nhánh IN_CLINIC — tương tự */
+            <View className="gap-2">
+              {/* 1. Warning (nếu có) */}
+              {isConfirmed && !canCancelConfirmed && !isCancelled && (
+                <View className="flex-row items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2">
+                  <MaterialIcons
+                    name="schedule"
+                    size={15}
+                    color="#f97316"
+                    style={{ marginTop: 1 }}
+                  />
+                  <Text className="flex-1 text-xs leading-[18px] text-orange-700">
+                    Đã quá thời hạn hủy lịch (trước 4 tiếng).
+                  </Text>
+                </View>
+              )}
+
+              {showCancelWarning && (
+                <View className="flex-row items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2">
+                  <MaterialIcons
+                    name="warning-amber"
+                    size={15}
+                    color="#d97706"
+                    style={{ marginTop: 1 }}
+                  />
+                  <Text className="flex-1 text-xs leading-[18px] text-yellow-800">
+                    Còn{' '}
+                    <Text className="font-bold">
+                      {hoursUntilDeadline > 0
+                        ? `${hoursUntilDeadline}h ${minutesUntilDeadline}p`
+                        : `${minutesUntilDeadline} phút`}
+                    </Text>{' '}
+                    để hủy lịch này.
+                  </Text>
+                </View>
+              )}
+
+              {/* 2. Nút hủy (nếu được phép) */}
+              {canCancel && (
+                <TouchableOpacity
+                  onPress={() => setCancelModalOpen(true)}
+                  activeOpacity={0.85}
+                  className="items-center justify-center rounded-[14px] border border-red-500 py-[14px]"
+                  style={{ borderWidth: 1.5 }}
+                >
+                  <Text className="text-[15px] font-bold text-red-500">
+                    Hủy lịch
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* 3. Action chính — đánh giá */}
+              {appointment.status === 'COMPLETED' && (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: '/appointments/review',
+                      params: { appointmentId },
+                    })
+                  }
+                  activeOpacity={0.85}
+                  className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-600 py-[15px]"
+                >
+                  <MaterialIcons name="rate-review" size={18} color="white" />
+                  <Text className="text-[15px] font-bold text-white">
+                    Đánh giá bác sĩ
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
       </View>
 
