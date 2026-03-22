@@ -207,7 +207,7 @@ export function AppointmentDetailScreen() {
   const isConfirmed = appointment.status === 'CONFIRMED';
   const canCancelConfirmed =
     isConfirmed && minutesUntilStart >= PATIENT_CANCEL_BEFORE_MINUTES;
-  const canCancel = isPendingStatus || canCancelConfirmed;
+  const canCancel = (isPendingStatus || canCancelConfirmed) && minutesUntilStart > 0;
 
   const showCancelWarning =
     isConfirmed &&

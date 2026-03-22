@@ -72,6 +72,14 @@ export const APPOINTMENT_STATUS_CONFIG: Record<string, StatusConfig> = {
     borderClass: 'border-amber-200',
     textClass: 'text-amber-700',
   },
+  NO_SHOW: {
+    label: 'Vắng mặt',
+    icon: 'person-off',
+    color: '#64748b',
+    bgClass: 'bg-slate-50',
+    borderClass: 'border-slate-200',
+    textClass: 'text-slate-600',
+  },
 };
 
 export const FALLBACK_APPOINTMENT_STATUS = APPOINTMENT_STATUS_CONFIG.PENDING;
