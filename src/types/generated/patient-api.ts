@@ -3192,7 +3192,7 @@ export interface components {
              * @example PAYMENT
              * @enum {string}
              */
-            type: "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT";
+            type: "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT" | "CHAT" | "MEDICAL";
             /** @example Thanh toán thành công */
             title: string;
             /** @example Bạn vừa thanh toán tiền thuê nhà tháng 7 */
@@ -3288,7 +3288,7 @@ export interface components {
             durationMinutes: number;
             timezone: string;
             /** @enum {string} */
-            status: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+            status: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
             /** @enum {string} */
             appointmentType: "VIDEO" | "IN_CLINIC";
             /** @enum {string} */
@@ -3386,6 +3386,14 @@ export interface components {
             smokingYears?: number;
             /** @description Alcohol consumption */
             alcoholConsumption?: boolean;
+            /** @description Previous Medical Record ID (Linking) */
+            previousRecordId?: string;
+            /** @description Previous Medical Record */
+            previousRecord?: components["schemas"]["MedicalRecordResponseDto"];
+            /** @description Suggested Previous Medical Record ID */
+            suggestedPreviousRecordId?: string;
+            /** @description Suggested Previous Medical Record */
+            suggestedPreviousRecord?: components["schemas"]["MedicalRecordResponseDto"];
             /**
              * Format: date-time
              * @description Created at
@@ -3564,7 +3572,7 @@ export interface components {
              * @description Trạng thái mới của lịch hẹn
              * @enum {string}
              */
-            status: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+            status: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
         };
         CancelAppointmentDto: {
             /** @description Lý do hủy lịch */
@@ -3625,6 +3633,8 @@ export interface components {
              * @example 2026-02-15T09:00:00Z
              */
             nextAppointmentDate?: string;
+            /** @description ID hồ sơ trước đó (để liên kết) */
+            previousRecordId?: string;
         };
         CreateVitalSignDto: {
             /**
@@ -3761,39 +3771,45 @@ export interface components {
         RevenueStatsDto: {
             /** @description Tổng doanh thu (VND) */
             total: number;
-            /** @description Số lượt khám hoàn thành */
+            /** @description Số lượt khám đã có payment */
             visitCount: number;
             /** @description Số đơn thuốc đã thanh toán */
             prescriptions: number;
-            /** @description Số chỉ định xét nghiệm đã thanh toán */
+            /** @description Số chỉ định xét nghiệm */
             labTests: number;
         };
         AppointmentStatsDto: {
-            /** @description Số lượt khám tại phòng khám */
+            /** @description Lượt khám tại phòng khám */
             inClinic: number;
-            /** @description Số lượt khám trực tuyến (video) */
+            /** @description Lượt khám trực tuyến */
             video: number;
         };
         PatientStatsDto: {
-            /** @description Tổng số bệnh nhân unique */
+            /** @description Tổng số bệnh nhân DISTINCT đã đến */
             total: number;
-            /** @description Số bệnh nhân mới (lần đầu khám với bác sĩ này) */
+            /** @description Bệnh nhân mới (chưa từng COMPLETED trước kỳ) — distinct */
             new: number;
-            /** @description Số bệnh nhân cũ (đã từng khám trước đó) */
+            /** @description Bệnh nhân cũ (đã từng COMPLETED trước kỳ) — distinct */
             returning: number;
         };
         DailyBreakdownDto: {
             /** @description Ngày (YYYY-MM-DD) */
             date: string;
-            /** @description Số bệnh nhân mới */
-            newPatients: number;
-            /** @description Số bệnh nhân cũ */
-            returningPatients: number;
-            /** @description Tổng lượt khám trong ngày */
+            /** @description Số lượt khám của bệnh nhân MỚI trong ngày */
+            newVisits: number;
+            /** @description Số lượt khám của bệnh nhân CŨ trong ngày */
+            returningVisits: number;
+            /** @description Tổng lượt khám trong ngày (newVisits + returningVisits) */
+            totalVisits: number;
+            /** @description Alias của totalVisits — dành cho line chart FE */
             visits: number;
+            /** @description Số bệnh nhân MỚI DISTINCT trong ngày — nhất quán với PatientStatsDto.new */
+            newPatients: number;
+            /** @description Số bệnh nhân CŨ DISTINCT trong ngày — nhất quán với PatientStatsDto.returning */
+            returningPatients: number;
         };
         ComparisonStatsDto: {
-            /** @description Thống kê kỳ trước */
+            /** @description Số liệu kỳ trước */
             previousPeriod: Record<string, never>;
             /** @description Phần trăm thay đổi so với kỳ trước */
             percentChange: Record<string, never>;
@@ -4025,6 +4041,8 @@ export interface components {
             decisionSource?: string;
             /** @example Override reason */
             doctorOverrideReason?: string;
+            /** @example Doctor notes */
+            doctorNotes?: string;
             /**
              * Format: date-time
              * @example 2024-10-11T09:30:00.000Z
@@ -4040,6 +4058,8 @@ export interface components {
              * @example 2024-10-11T09:30:00.000Z
              */
             updatedAt: string;
+            patient?: components["schemas"]["PatientResponseDto"];
+            doctor?: components["schemas"]["DoctorResponseDto"];
         };
         ScreeningRequestResponseDto: {
             /** @example d2c1b3a4-5e6f-7890-1234-56789abcdef0 */
@@ -4197,6 +4217,14 @@ export interface components {
              * @description Ngày cập nhật
              */
             updatedAt: string;
+            /** @description ID hồ sơ trước đó (liên kết) */
+            previousRecordId?: string;
+            /** @description ID hồ hồ sơ đề xuất liên kết */
+            suggestedPreviousRecordId?: Record<string, never>;
+            /** @description Thông tin hồ sơ đã liên kết */
+            previousRecord?: Record<string, never>;
+            /** @description Thông tin hồ sơ đề xuất */
+            suggestedPreviousRecord?: Record<string, never>;
             /** @description PDF URL */
             pdfUrl?: string;
             screeningRequests?: components["schemas"]["ScreeningRequestResponseDto"][];
@@ -4256,6 +4284,8 @@ export interface components {
             smokingYears?: number;
             /** @description Uống rượu bia */
             alcoholConsumption?: boolean;
+            /** @description ID hồ sơ trước đó (để liên kết) */
+            previousRecordId?: string;
         };
         SignMedicalRecordDto: {
             /** @description Digital signature data (base64 or hash) */
@@ -4940,6 +4970,8 @@ export interface components {
             decisionSource: "AI_ONLY" | "DOCTOR_ONLY" | "DOCTOR_REVIEWED_AI";
             /** @description Reason for overriding AI analysis (if applicable) */
             doctorOverrideReason?: string;
+            /** @description Additional notes from the doctor */
+            doctorNotes?: string;
         };
         UploadAnalyzeResponseDto: {
             screening: components["schemas"]["ScreeningRequestResponseDto"];
@@ -6130,7 +6162,7 @@ export interface operations {
                 /** @description Thứ tự sắp xếp (ASC hoặc DESC) */
                 order?: "ASC" | "DESC";
                 status?: "UNREAD" | "READ";
-                type?: "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT";
+                type?: "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT" | "CHAT" | "MEDICAL";
             };
             header?: never;
             path?: never;
@@ -6302,7 +6334,7 @@ export interface operations {
                 /** @description Thứ tự sắp xếp (ASC hoặc DESC) */
                 order?: "ASC" | "DESC";
                 /** @description Lọc theo trạng thái */
-                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
                 /** @description Ngày bắt đầu (YYYY-MM-DD) */
                 startDate?: string;
                 /** @description Ngày kết thúc (YYYY-MM-DD) */
@@ -6338,7 +6370,7 @@ export interface operations {
                 /** @description Thứ tự sắp xếp (ASC hoặc DESC) */
                 order?: "ASC" | "DESC";
                 /** @description Lọc theo trạng thái */
-                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
                 /** @description Ngày bắt đầu (YYYY-MM-DD) */
                 startDate?: string;
                 /** @description Ngày kết thúc (YYYY-MM-DD) */
@@ -6384,7 +6416,7 @@ export interface operations {
                 /** @description Thứ tự sắp xếp (ASC hoặc DESC) */
                 order?: "ASC" | "DESC";
                 /** @description Lọc theo trạng thái */
-                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
                 /** @description Ngày bắt đầu (YYYY-MM-DD) */
                 startDate?: string;
                 /** @description Ngày kết thúc (YYYY-MM-DD) */
@@ -8118,7 +8150,7 @@ export interface operations {
                 /** @description Thứ tự sắp xếp (ASC hoặc DESC) */
                 order?: "ASC" | "DESC";
                 /** @description Filter by appointment status */
-                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+                status?: "PENDING_PAYMENT" | "PENDING" | "CONFIRMED" | "CHECKED_IN" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "RESCHEDULED" | "NO_SHOW";
             };
             header?: never;
             path: {

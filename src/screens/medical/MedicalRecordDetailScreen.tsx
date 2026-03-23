@@ -247,6 +247,58 @@ export function MedicalRecordDetailScreen() {
           </View>
         </View>
 
+        {/* ── HỒ SƠ LIÊN QUAN (TIỀN SỬ) ── */}
+        {(record as any).previousRecord && (
+          <SectionCard title="Hồ sơ liên quan (Tiền sử gần nhất)">
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/medical/[recordId]',
+                  params: { recordId: (record as any).previousRecord.id },
+                })
+              }
+              activeOpacity={0.7}
+              className="bg-blue-50/50 rounded-xl border border-blue-100 p-3 mb-3 mt-1"
+            >
+              <View className="flex-row justify-between items-start mb-2">
+                <View className="bg-blue-100 px-2 py-0.5 rounded">
+                  <Text className="text-[10px] font-bold text-blue-700">
+                    #{(record as any).previousRecord.recordNumber}
+                  </Text>
+                </View>
+                <Text className="text-[10px] text-slate-500 italic">
+                  {(record as any).previousRecord.recordType}
+                </Text>
+              </View>
+              
+              <View className="flex-row items-center mb-1">
+                <MaterialIcons name="event" size={14} color="#94a3b8" />
+                <Text className="text-xs text-slate-600 ml-1.5">
+                  Ngày khám: <Text className="font-semibold text-slate-900">
+                    {new Date((record as any).previousRecord.createdAt).toLocaleDateString('vi-VN')}
+                  </Text>
+                </Text>
+              </View>
+
+              <View className="flex-row items-center">
+                <MaterialIcons name="person" size={14} color="#94a3b8" />
+                <Text className="text-xs text-slate-600 ml-1.5">
+                  Bác sĩ: <Text className="font-semibold text-slate-900">
+                    {(record as any).previousRecord.doctorName || '—'}
+                  </Text>
+                </Text>
+              </View>
+
+              <View className="mt-2 pt-2 border-t border-blue-100 flex-row justify-end items-center">
+                <Text className="text-[11px] font-bold text-blue-600 mr-1">
+                  Xem chi tiết
+                </Text>
+                <MaterialIcons name="arrow-forward" size={12} color="#2563eb" />
+              </View>
+            </TouchableOpacity>
+          </SectionCard>
+        )}
+
         {/* ── CHỈ SỐ SINH HIỆU ── */}
         <SectionCard title="Chỉ số sinh hiệu">
           <InfoLine

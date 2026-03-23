@@ -1518,7 +1518,9 @@
                 "GENERAL",
                 "PAYMENT",
                 "SYSTEM",
-                "APPOINTMENT"
+                "APPOINTMENT",
+                "CHAT",
+                "MEDICAL"
               ]
             }
           }
@@ -1861,7 +1863,8 @@
                 "IN_PROGRESS",
                 "COMPLETED",
                 "CANCELLED",
-                "RESCHEDULED"
+                "RESCHEDULED",
+                "NO_SHOW"
               ]
             }
           },
@@ -1997,7 +2000,8 @@
                 "IN_PROGRESS",
                 "COMPLETED",
                 "CANCELLED",
-                "RESCHEDULED"
+                "RESCHEDULED",
+                "NO_SHOW"
               ]
             }
           },
@@ -2133,7 +2137,8 @@
                 "IN_PROGRESS",
                 "COMPLETED",
                 "CANCELLED",
-                "RESCHEDULED"
+                "RESCHEDULED",
+                "NO_SHOW"
               ]
             }
           },
@@ -2491,6 +2496,12 @@
         "summary": "Hủy lịch hẹn",
         "tags": [
           "Appointment Actions"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "DOCTOR",
+          "PATIENT",
+          "RECEPTIONIST"
         ]
       }
     },
@@ -2544,6 +2555,12 @@
         "summary": "Đổi lịch hẹn sang time slot khác",
         "tags": [
           "Appointment Actions"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "DOCTOR",
+          "PATIENT",
+          "RECEPTIONIST"
         ]
       }
     },
@@ -4980,7 +4997,8 @@
                 "IN_PROGRESS",
                 "COMPLETED",
                 "CANCELLED",
-                "RESCHEDULED"
+                "RESCHEDULED",
+                "NO_SHOW"
               ]
             }
           }
@@ -9783,7 +9801,9 @@
               "GENERAL",
               "PAYMENT",
               "SYSTEM",
-              "APPOINTMENT"
+              "APPOINTMENT",
+              "CHAT",
+              "MEDICAL"
             ]
           },
           "title": {
@@ -10017,7 +10037,8 @@
               "IN_PROGRESS",
               "COMPLETED",
               "CANCELLED",
-              "RESCHEDULED"
+              "RESCHEDULED",
+              "NO_SHOW"
             ]
           },
           "appointmentType": {
@@ -10297,6 +10318,30 @@
           "alcoholConsumption": {
             "type": "boolean",
             "description": "Alcohol consumption"
+          },
+          "previousRecordId": {
+            "type": "string",
+            "description": "Previous Medical Record ID (Linking)"
+          },
+          "previousRecord": {
+            "description": "Previous Medical Record",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicalRecordResponseDto"
+              }
+            ]
+          },
+          "suggestedPreviousRecordId": {
+            "type": "string",
+            "description": "Suggested Previous Medical Record ID"
+          },
+          "suggestedPreviousRecord": {
+            "description": "Suggested Previous Medical Record",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicalRecordResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "format": "date-time",
@@ -10646,7 +10691,8 @@
               "IN_PROGRESS",
               "COMPLETED",
               "CANCELLED",
-              "RESCHEDULED"
+              "RESCHEDULED",
+              "NO_SHOW"
             ],
             "description": "Trạng thái mới của lịch hẹn"
           }
@@ -10791,6 +10837,10 @@
             "type": "string",
             "description": "Ngày dự kiến tái khám",
             "example": "2026-02-15T09:00:00Z"
+          },
+          "previousRecordId": {
+            "type": "string",
+            "description": "ID hồ sơ trước đó (để liên kết)"
           }
         }
       },
@@ -11057,7 +11107,7 @@
           },
           "visitCount": {
             "type": "number",
-            "description": "Số lượt khám hoàn thành"
+            "description": "Số lượt khám đã có payment"
           },
           "prescriptions": {
             "type": "number",
@@ -11065,7 +11115,7 @@
           },
           "labTests": {
             "type": "number",
-            "description": "Số chỉ định xét nghiệm đã thanh toán"
+            "description": "Số chỉ định xét nghiệm"
           }
         },
         "required": [
@@ -11080,11 +11130,11 @@
         "properties": {
           "inClinic": {
             "type": "number",
-            "description": "Số lượt khám tại phòng khám"
+            "description": "Lượt khám tại phòng khám"
           },
           "video": {
             "type": "number",
-            "description": "Số lượt khám trực tuyến (video)"
+            "description": "Lượt khám trực tuyến"
           }
         },
         "required": [
@@ -11097,15 +11147,15 @@
         "properties": {
           "total": {
             "type": "number",
-            "description": "Tổng số bệnh nhân unique"
+            "description": "Tổng số bệnh nhân DISTINCT đã đến"
           },
           "new": {
             "type": "number",
-            "description": "Số bệnh nhân mới (lần đầu khám với bác sĩ này)"
+            "description": "Bệnh nhân mới (chưa từng COMPLETED trước kỳ) — distinct"
           },
           "returning": {
             "type": "number",
-            "description": "Số bệnh nhân cũ (đã từng khám trước đó)"
+            "description": "Bệnh nhân cũ (đã từng COMPLETED trước kỳ) — distinct"
           }
         },
         "required": [
@@ -11121,24 +11171,39 @@
             "type": "string",
             "description": "Ngày (YYYY-MM-DD)"
           },
-          "newPatients": {
+          "newVisits": {
             "type": "number",
-            "description": "Số bệnh nhân mới"
+            "description": "Số lượt khám của bệnh nhân MỚI trong ngày"
           },
-          "returningPatients": {
+          "returningVisits": {
             "type": "number",
-            "description": "Số bệnh nhân cũ"
+            "description": "Số lượt khám của bệnh nhân CŨ trong ngày"
+          },
+          "totalVisits": {
+            "type": "number",
+            "description": "Tổng lượt khám trong ngày (newVisits + returningVisits)"
           },
           "visits": {
             "type": "number",
-            "description": "Tổng lượt khám trong ngày"
+            "description": "Alias của totalVisits — dành cho line chart FE"
+          },
+          "newPatients": {
+            "type": "number",
+            "description": "Số bệnh nhân MỚI DISTINCT trong ngày — nhất quán với PatientStatsDto.new"
+          },
+          "returningPatients": {
+            "type": "number",
+            "description": "Số bệnh nhân CŨ DISTINCT trong ngày — nhất quán với PatientStatsDto.returning"
           }
         },
         "required": [
           "date",
+          "newVisits",
+          "returningVisits",
+          "totalVisits",
+          "visits",
           "newPatients",
-          "returningPatients",
-          "visits"
+          "returningPatients"
         ]
       },
       "ComparisonStatsDto": {
@@ -11146,7 +11211,7 @@
         "properties": {
           "previousPeriod": {
             "type": "object",
-            "description": "Thống kê kỳ trước"
+            "description": "Số liệu kỳ trước"
           },
           "percentChange": {
             "type": "object",
@@ -11585,6 +11650,10 @@
             "type": "string",
             "example": "Override reason"
           },
+          "doctorNotes": {
+            "type": "string",
+            "example": "Doctor notes"
+          },
           "reviewedAt": {
             "format": "date-time",
             "type": "string",
@@ -11599,6 +11668,12 @@
             "format": "date-time",
             "type": "string",
             "example": "2024-10-11T09:30:00.000Z"
+          },
+          "patient": {
+            "$ref": "#/components/schemas/PatientResponseDto"
+          },
+          "doctor": {
+            "$ref": "#/components/schemas/DoctorResponseDto"
           }
         },
         "required": [
@@ -11915,6 +11990,22 @@
             "type": "string",
             "description": "Ngày cập nhật"
           },
+          "previousRecordId": {
+            "type": "string",
+            "description": "ID hồ sơ trước đó (liên kết)"
+          },
+          "suggestedPreviousRecordId": {
+            "type": "object",
+            "description": "ID hồ hồ sơ đề xuất liên kết"
+          },
+          "previousRecord": {
+            "type": "object",
+            "description": "Thông tin hồ sơ đã liên kết"
+          },
+          "suggestedPreviousRecord": {
+            "type": "object",
+            "description": "Thông tin hồ sơ đề xuất"
+          },
           "pdfUrl": {
             "type": "string",
             "description": "PDF URL"
@@ -12060,6 +12151,10 @@
           "alcoholConsumption": {
             "type": "boolean",
             "description": "Uống rượu bia"
+          },
+          "previousRecordId": {
+            "type": "string",
+            "description": "ID hồ sơ trước đó (để liên kết)"
           }
         }
       },
@@ -13826,6 +13921,10 @@
           "doctorOverrideReason": {
             "type": "string",
             "description": "Reason for overriding AI analysis (if applicable)"
+          },
+          "doctorNotes": {
+            "type": "string",
+            "description": "Additional notes from the doctor"
           }
         },
         "required": [
