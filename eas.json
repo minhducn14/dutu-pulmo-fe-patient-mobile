@@ -10,11 +10,16 @@
       "env": {
         "NODE_ENV": "development",
         "EXPO_PUBLIC_APP_NAME": "DutuPulmo Patient App",
-        "EXPO_PUBLIC_API_URL": "https://authorised-wannest-kacey.ngrok-free.dev"
+        "EXPO_PUBLIC_API_URL": "https://du-tu-pulmo-be-staging-2pwkl.ondigitalocean.app"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_APP_NAME": "DutuPulmo Patient App",
+        "EXPO_PUBLIC_API_URL": "https://du-tu-pulmo-be-staging-2pwkl.ondigitalocean.app"
+      }
     },
     "production": {
       "autoIncrement": true

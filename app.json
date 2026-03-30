@@ -4,7 +4,7 @@
     "slug": "dutu-pulmo-fe-patient-mobile",
     "version": "1.0.0",
     "extra": {
-      "apiBaseUrl": "https://authorised-wannest-kacey.ngrok-free.dev",
+      "apiBaseUrl": "https://du-tu-pulmo-be-staging-2pwkl.ondigitalocean.app",
       "router": {},
       "eas": {
         "projectId": "3d76970f-5cbc-487a-93a6-f9591661a19d"

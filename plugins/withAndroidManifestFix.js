@@ -11,15 +11,28 @@ module.exports = function withAndroidManifestFix(config) {
     if (!application) return config;
 
     // Fix 2: Add tools:replace to Firebase notification color meta-data
-    const metaDataList = application['meta-data'] || [];
-    const colorMeta = metaDataList.find(
+    if (!application['meta-data']) {
+      application['meta-data'] = [];
+    }
+    const metaDataList = application['meta-data'];
+    let colorMeta = metaDataList.find(
       (m) =>
         m.$?.['android:name'] ===
         'com.google.firebase.messaging.default_notification_color'
     );
-    if (colorMeta) {
-      colorMeta.$['tools:replace'] = 'android:resource';
+
+    if (!colorMeta) {
+      colorMeta = {
+        $: {
+          'android:name': 'com.google.firebase.messaging.default_notification_color',
+          'android:resource': '@color/notification_icon_color',
+        },
+      };
+      metaDataList.push(colorMeta);
     }
+
+    // Explicitly set tools:replace
+    colorMeta.$['tools:replace'] = 'android:resource';
 
     // Fix 3: Remove duplicate DailyOngoingMeetingForegroundService
     const services = application['service'] || [];
