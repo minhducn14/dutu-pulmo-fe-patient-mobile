@@ -144,9 +144,9 @@ export const appointmentService = {
     return data;
   },
 
-  checkInVideo: async (appointmentId: string) => {
+  checkInAppointment: async (appointmentId: string) => {
     const { data } = await api.post<AppointmentResponseDto>(
-      `/appointments/${appointmentId}/check-in/video`,
+      `/appointments/${appointmentId}/check-in`,
     );
     return data;
   },

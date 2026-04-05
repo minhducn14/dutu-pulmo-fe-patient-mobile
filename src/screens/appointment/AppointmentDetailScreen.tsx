@@ -22,6 +22,7 @@ import { Modal } from '@/components/ui/Modal';
 import {
   useAppointmentDetail,
   useCancelAppointment,
+  useCheckInVideoCall,
 } from '@/hooks/useAppointments';
 import { useMyPatient } from '@/hooks/useProfile';
 import { useAuthStore } from '@/store/auth.store';
@@ -117,6 +118,7 @@ export function AppointmentDetailScreen() {
 
   const detailQuery = useAppointmentDetail(appointmentId);
   const cancelMutation = useCancelAppointment();
+  const checkInMutation = useCheckInVideoCall();
   const myPatientQuery = useMyPatient();
 
   const handleShare = async () => {
@@ -564,18 +566,34 @@ export function AppointmentDetailScreen() {
               {/* 3. Action chính — join video / đánh giá */}
               {canJoinVideo && (
                 <TouchableOpacity
-                  onPress={() =>
-                    router.push({
-                      pathname: '/video-call',
-                      params: { appointmentId },
-                    })
-                  }
+                  onPress={async () => {
+                    try {
+                      // Chỉ gọi check-in nếu chưa điểm danh (status === 'CONFIRMED')
+                      if (appointment.status === 'CONFIRMED') {
+                        await checkInMutation.mutateAsync(appointmentId);
+                      }
+                      router.push({
+                        pathname: '/video-call',
+                        params: { appointmentId },
+                      });
+                    } catch (error: any) {
+                      const errorMsg = error?.response?.data?.message || error?.message || 'Không thể tham gia phòng video';
+                      Alert.alert('Chưa đến giờ', errorMsg);
+                    }
+                  }}
+                  disabled={checkInMutation.isPending}
                   activeOpacity={0.85}
-                  className="flex-row items-center justify-center gap-2 rounded-[14px] bg-blue-500 py-[15px]"
+                  className={`flex-row items-center justify-center gap-2 rounded-[14px] py-[15px] ${
+                    checkInMutation.isPending ? 'bg-blue-300' : 'bg-blue-500'
+                  }`}
                 >
                   <MaterialIcons name="video-call" size={18} color="white" />
                   <Text className="text-[15px] font-bold text-white">
-                    Vào video call
+                    {checkInMutation.isPending 
+                      ? 'Đang chuẩn bị...' 
+                      : appointment.status === 'CONFIRMED' 
+                        ? 'Điểm danh & Vào khám' 
+                        : 'Vào phòng khám'}
                   </Text>
                 </TouchableOpacity>
               )}

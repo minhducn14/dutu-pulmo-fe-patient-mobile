@@ -167,6 +167,17 @@ export function useVideoCallStatus(appointmentId: string) {
   });
 }
 
+export function useCheckInVideoCall() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (appointmentId: string) => appointmentService.checkInAppointment(appointmentId),
+    onSuccess: (_, appointmentId) => {
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.detail(appointmentId) });
+      void queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+}
+
 export function usePendingPaymentAppointments() {
   return useQuery({
     queryKey: appointmentKeys.myList({
