@@ -148,9 +148,8 @@ export function VerifyOtpScreen() {
           <TextInput
             key={i}
             ref={(el) => { inputRefs.current[i] = el; }}
-            className={`w-[46px] h-[56px] rounded-2xl border-2 text-center text-2xl font-bold text-slate-900 ${
-              digit ? 'border-[#0A7CFF] bg-blue-50' : 'border-slate-200 bg-slate-50'
-            }`}
+            className={`w-[46px] h-[56px] rounded-2xl border-2 text-center text-2xl font-bold text-slate-900 ${digit ? 'border-[#0A7CFF] bg-blue-50' : 'border-slate-200 bg-slate-50'
+              }`}
             value={digit}
             onChangeText={(v) => handleChange(v, i)}
             onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
@@ -195,7 +194,7 @@ export function VerifyOtpScreen() {
       </View>
 
       <Text className="mt-3 text-center text-xs text-slate-400">
-        Mã OTP có hiệu lực trong 10 phút
+        Mã OTP có hiệu lực trong 5 phút
       </Text>
     </View>
   );
