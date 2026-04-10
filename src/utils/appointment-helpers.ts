@@ -70,6 +70,7 @@ export function toTimeSlots(apiSlots: TimeSlotResponseDto[]): TimeSlot[] {
       startTime: s.startTime,
       endTime: s.endTime,
       period: localHour < 12 ? 'morning' : 'afternoon',
+      allowedAppointmentTypes: s.allowedAppointmentTypes as any,
     };
   });
 }
