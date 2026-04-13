@@ -5,19 +5,25 @@
   "scripts": {
     "start": "expo start",
     "dev": "expo start --dev-client",
-    "dev:build": "eas build --profile development --platform android",
-    "dev:prebuild": "npx expo prebuild --clean --platform android",
-    "dev:android": "npx expo start --android --port 5554",
-
-    "ci": "npm ci --include=dev",
-    "dev:android:full": "npm run ci && npm run prebuild:android",
-
-    "reset-project": "node ./scripts/reset-project.js",
-    "generate:types": "node ./scripts/generate-openapi-types.mjs",
+    
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
-    "lint": "expo lint"
+
+    "dev:prebuild": "npx expo prebuild --clean --platform android",
+    "dev:android:full": "npm run ci && npm run dev:prebuild && npm run android",
+    "dev:build": "eas build --profile development --platform android",
+
+    "preview:android": "eas build --profile preview --platform android",
+    "preview:ios": "eas build --profile preview --platform ios",
+    "preview:all": "eas build --profile preview --platform all",
+
+    "ci": "npm ci --include=dev",
+    "lint": "expo lint",
+    "reset-project": "node ./scripts/reset-project.js",
+    "generate:types": "node ./scripts/generate-openapi-types.mjs",
+    "clean:all": "watchman watch-del-all && rm -rf node_modules && rm -rf android && rm -rf ios && npm install",
+
+    "web": "expo start --web"
   },
   "dependencies": {
     "@daily-co/config-plugin-rn-daily-js": "^0.0.11",
