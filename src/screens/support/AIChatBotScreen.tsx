@@ -99,11 +99,13 @@ export function AIChatBotScreen() {
             style={isAi ? theme.shadow.card : {}}
           >
             {isLatestAi ? (
-              <TypingEffect
-                text={item.content}
-                className="text-[15px] leading-6 text-slate-800"
-                speed={20}
-              />
+              <>
+                <TypingEffect
+                  text={item.content}
+                  className="text-[15px] leading-6 text-slate-800"
+                  speed={20}
+                />
+              </>
             ) : (
               <Text
                 className={`text-[15px] leading-6 ${isAi ? 'text-slate-800' : 'text-white'}`}
@@ -157,15 +159,12 @@ export function AIChatBotScreen() {
           data={[...messages].reverse()}
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
-          // Fix: bỏ paddingTop lớn, chỉ dùng padding đều
           contentContainerStyle={{
             padding: 16,
-            // Khi không có message, căn giữa màn hình
             flexGrow: 1,
           }}
           inverted
           ListHeaderComponent={isLoading ? <TypingIndicator /> : null}
-          // Fix: chỉ hiện EmptyComponent khi thực sự không có message và không loading
           ListEmptyComponent={
             !isLoading ? (
               <View
