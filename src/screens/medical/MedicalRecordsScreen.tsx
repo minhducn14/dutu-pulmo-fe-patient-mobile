@@ -5,7 +5,10 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { FALLBACK_MEDICAL_RECORD_STATUS, MEDICAL_RECORD_STATUS_CONFIG } from '@/constants/status-configs';
+import {
+  FALLBACK_MEDICAL_RECORD_STATUS,
+  MEDICAL_RECORD_STATUS_CONFIG,
+} from '@/constants/status-configs';
 import { patientService } from '@/services/patient.service';
 import { useQuery } from '@tanstack/react-query';
 
@@ -16,7 +19,9 @@ function MedicalRecordCard({
   record: any;
   onPress: () => void;
 }) {
-  const statusConfig = MEDICAL_RECORD_STATUS_CONFIG[record.status] ?? FALLBACK_MEDICAL_RECORD_STATUS;
+  const statusConfig =
+    MEDICAL_RECORD_STATUS_CONFIG[record.status] ??
+    FALLBACK_MEDICAL_RECORD_STATUS;
   const scheduledAt = record.appointment?.scheduledAt
     ? new Date(record.appointment.scheduledAt)
     : new Date(record.createdAt);
@@ -39,7 +44,11 @@ function MedicalRecordCard({
         <View
           className={`flex-row items-center gap-1.5 ${statusConfig.bgClass} border ${statusConfig.borderClass} rounded-lg px-3 py-1.5`}
         >
-          <MaterialIcons name={statusConfig.icon as any} size={14} color={statusConfig.color} />
+          <MaterialIcons
+            name={statusConfig.icon as any}
+            size={14}
+            color={statusConfig.color}
+          />
           <Text className={`text-xs font-semibold ${statusConfig.textClass}`}>
             {statusConfig.label}
           </Text>
@@ -59,15 +68,21 @@ function MedicalRecordCard({
         </View>
 
         <View className="flex-1">
-          <Text className="text-[15px] font-bold uppercase text-slate-900" numberOfLines={1}>
+          <Text
+            className="text-[15px] font-bold uppercase text-slate-900"
+            numberOfLines={1}
+          >
             {record.doctor?.fullName ?? 'Bác sĩ'}
           </Text>
           <Text className="mt-0.5 text-xs text-slate-500" numberOfLines={1}>
             {record.appointment?.scheduledAt
-              ? new Date(record.appointment.scheduledAt).toLocaleTimeString('vi-VN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+              ? new Date(record.appointment.scheduledAt).toLocaleTimeString(
+                  'vi-VN',
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  },
+                )
               : '—'}
           </Text>
         </View>
@@ -79,7 +94,9 @@ function MedicalRecordCard({
       <View className="flex-row items-center px-4 pb-3">
         <Text className="text-[11px] text-slate-400">
           Mã hồ sơ:{' '}
-          <Text className="font-semibold text-slate-500">{record.recordNumber ?? '—'}</Text>
+          <Text className="font-semibold text-slate-500">
+            {record.recordNumber ?? '—'}
+          </Text>
         </Text>
       </View>
     </TouchableOpacity>
@@ -101,13 +118,16 @@ export function MedicalRecordsScreen() {
   });
 
   if (meQuery.isLoading || recordsQuery.isLoading) {
-    return <Loading label="Đang tải hồ sơ y tế..." />;
+    return <Loading label="Đang tải Hồ sơ bệnh án..." />;
   }
 
   if (meQuery.isError || recordsQuery.isError) {
     return (
       <View className="flex-1 items-center justify-center bg-slate-50 px-6">
-        <EmptyState title="Không thể tải hồ sơ" description="Vui lòng thử lại sau." />
+        <EmptyState
+          title="Không thể tải hồ sơ"
+          description="Vui lòng thử lại sau."
+        />
       </View>
     );
   }
@@ -116,7 +136,7 @@ export function MedicalRecordsScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScreenHeader title="Hồ sơ y tế" />
+      <ScreenHeader title="Hồ sơ bệnh án" />
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 pb-8"
@@ -140,7 +160,9 @@ export function MedicalRecordsScreen() {
               <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-blue-50">
                 <MaterialIcons name="folder-open" size={36} color="#93c5fd" />
               </View>
-              <Text className="text-base font-bold text-slate-700">Chưa có hồ sơ y tế</Text>
+              <Text className="text-base font-bold text-slate-700">
+                Chưa có Hồ sơ bệnh án
+              </Text>
               <Text className="mt-1 text-center text-sm text-slate-400">
                 Hồ sơ sẽ xuất hiện sau khi hoàn thành buổi khám
               </Text>
@@ -161,4 +183,3 @@ export function MedicalRecordsScreen() {
 }
 
 export default MedicalRecordsScreen;
-

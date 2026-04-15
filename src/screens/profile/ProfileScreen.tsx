@@ -15,7 +15,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLogout } from '@/hooks/useLogout';
-import { useNotificationUnreadCount, useTestPushNotification } from '@/hooks/useNotifications';
+import {
+  useNotificationUnreadCount,
+  useTestPushNotification,
+} from '@/hooks/useNotifications';
 import { useMyPatient, useProfile } from '@/hooks/useProfile';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -291,14 +294,14 @@ export function ProfileScreen() {
         {/* ── MENU: Y TẾ ── */}
         <View className="mx-4 mt-5">
           <Text className="mb-2 px-1 text-[11px] font-bold tracking-[0.8px] text-slate-400">
-            HỒ SƠ Y TẾ
+            Hồ sơ bệnh án
           </Text>
           <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
             <MenuItem
               icon="folder-open"
               iconColor="#0A7CFF"
               iconBg="#EFF6FF"
-              title="Hồ sơ y tế"
+              title="Hồ sơ bệnh án"
               subtitle="Xem hồ sơ và lịch sử khám"
               onPress={() => router.push('/medical-records')}
             />
@@ -379,7 +382,8 @@ export function ProfileScreen() {
                 try {
                   await testPushMutation.mutateAsync({
                     title: '🔔 Thông báo thử nghiệm',
-                    content: 'Đây là nội dung thử nghiệm từ hệ thống Mobile App.',
+                    content:
+                      'Đây là nội dung thử nghiệm từ hệ thống Mobile App.',
                   });
                 } catch (error) {
                   console.warn('Test push failed:', error);

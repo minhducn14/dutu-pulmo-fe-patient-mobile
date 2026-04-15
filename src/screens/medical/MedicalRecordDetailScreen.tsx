@@ -14,7 +14,10 @@ import { Loading } from '@/components/ui/Loading';
 import { medicalService } from '@/services/medical.service';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { FALLBACK_MEDICAL_RECORD_STATUS, MEDICAL_RECORD_STATUS_CONFIG } from '@/constants/status-configs';
+import {
+  FALLBACK_MEDICAL_RECORD_STATUS,
+  MEDICAL_RECORD_STATUS_CONFIG,
+} from '@/constants/status-configs';
 
 const SIGNED_CONFIG: Record<
   string,
@@ -187,7 +190,8 @@ export function MedicalRecordDetailScreen() {
   const record = detailQuery.data;
   const pdfUrl = pdfQuery.data?.pdfUrl ?? pdfQuery.data?.url ?? null;
   const statusConfig =
-    MEDICAL_RECORD_STATUS_CONFIG[record.status] ?? FALLBACK_MEDICAL_RECORD_STATUS;
+    MEDICAL_RECORD_STATUS_CONFIG[record.status] ??
+    FALLBACK_MEDICAL_RECORD_STATUS;
   const signedConfig =
     SIGNED_CONFIG[record.signedStatus] ?? SIGNED_CONFIG['NOT_SIGNED'];
   const vs = record.vitalSigns ?? {};
@@ -199,7 +203,7 @@ export function MedicalRecordDetailScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScreenHeader title="Chi tiết hồ sơ y tế" />
+      <ScreenHeader title="Chi tiết Hồ sơ bệnh án" />
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 pb-[120px]"
@@ -258,39 +262,43 @@ export function MedicalRecordDetailScreen() {
                 })
               }
               activeOpacity={0.7}
-              className="bg-blue-50/50 rounded-xl border border-blue-100 p-3 mb-3 mt-1"
+              className="mb-3 mt-1 rounded-xl border border-blue-100 bg-blue-50/50 p-3"
             >
-              <View className="flex-row justify-between items-start mb-2">
-                <View className="bg-blue-100 px-2 py-0.5 rounded">
+              <View className="mb-2 flex-row items-start justify-between">
+                <View className="rounded bg-blue-100 px-2 py-0.5">
                   <Text className="text-[10px] font-bold text-blue-700">
                     #{(record as any).previousRecord.recordNumber}
                   </Text>
                 </View>
-                <Text className="text-[10px] text-slate-500 italic">
+                <Text className="text-[10px] italic text-slate-500">
                   {(record as any).previousRecord.recordType}
                 </Text>
               </View>
-              
-              <View className="flex-row items-center mb-1">
+
+              <View className="mb-1 flex-row items-center">
                 <MaterialIcons name="event" size={14} color="#94a3b8" />
-                <Text className="text-xs text-slate-600 ml-1.5">
-                  Ngày khám: <Text className="font-semibold text-slate-900">
-                    {new Date((record as any).previousRecord.createdAt).toLocaleDateString('vi-VN')}
+                <Text className="ml-1.5 text-xs text-slate-600">
+                  Ngày khám:{' '}
+                  <Text className="font-semibold text-slate-900">
+                    {new Date(
+                      (record as any).previousRecord.createdAt,
+                    ).toLocaleDateString('vi-VN')}
                   </Text>
                 </Text>
               </View>
 
               <View className="flex-row items-center">
                 <MaterialIcons name="person" size={14} color="#94a3b8" />
-                <Text className="text-xs text-slate-600 ml-1.5">
-                  Bác sĩ: <Text className="font-semibold text-slate-900">
+                <Text className="ml-1.5 text-xs text-slate-600">
+                  Bác sĩ:{' '}
+                  <Text className="font-semibold text-slate-900">
                     {(record as any).previousRecord.doctorName || '—'}
                   </Text>
                 </Text>
               </View>
 
-              <View className="mt-2 pt-2 border-t border-blue-100 flex-row justify-end items-center">
-                <Text className="text-[11px] font-bold text-blue-600 mr-1">
+              <View className="mt-2 flex-row items-center justify-end border-t border-blue-100 pt-2">
+                <Text className="mr-1 text-[11px] font-bold text-blue-600">
                   Xem chi tiết
                 </Text>
                 <MaterialIcons name="arrow-forward" size={12} color="#2563eb" />
@@ -527,4 +535,3 @@ export function MedicalRecordDetailScreen() {
 }
 
 export default MedicalRecordDetailScreen;
-

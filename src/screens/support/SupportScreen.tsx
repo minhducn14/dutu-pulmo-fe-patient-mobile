@@ -87,9 +87,9 @@ const FAQ_ITEMS = [
   },
   {
     icon: 'folder-open' as const,
-    title: 'Xem hồ sơ y tế?',
+    title: 'Xem Hồ sơ bệnh án?',
     description:
-      'Vào Tài khoản → Hồ sơ y tế để xem toàn bộ lịch sử khám và đơn thuốc.',
+      'Vào Tài khoản → Hồ sơ bệnh án để xem toàn bộ lịch sử khám và đơn thuốc.',
     color: '#0A7CFF',
     bg: '#EFF6FF',
   },
@@ -107,7 +107,9 @@ const FAQ_ITEMS = [
 export function SupportScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<number | null>(null);
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<
+    number | null
+  >(null);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -121,7 +123,9 @@ export function SupportScreen() {
   const handleCall = () => Linking.openURL('tel:19002805');
   const handleChat = () => router.push('/(tabs)/chat');
   const selectedCategory =
-    selectedCategoryIndex == null ? null : SUPPORT_CATEGORIES[selectedCategoryIndex];
+    selectedCategoryIndex == null
+      ? null
+      : SUPPORT_CATEGORIES[selectedCategoryIndex];
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
@@ -149,7 +153,14 @@ export function SupportScreen() {
           }}
         >
           {/* Avatar + greeting */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              marginBottom: 14,
+            }}
+          >
             <View
               style={{
                 width: 52,
@@ -163,7 +174,9 @@ export function SupportScreen() {
               <MaterialIcons name="support-agent" size={28} color="#0A7CFF" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: '#0F172A' }}>
+              <Text
+                style={{ fontSize: 17, fontWeight: '700', color: '#0F172A' }}
+              >
                 {greeting}, {firstName} 👋
               </Text>
               <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
@@ -195,9 +208,20 @@ export function SupportScreen() {
                 marginTop: 1,
               }}
             >
-              <MaterialIcons name="medical-services" size={16} color="#0A7CFF" />
+              <MaterialIcons
+                name="medical-services"
+                size={16}
+                color="#0A7CFF"
+              />
             </View>
-            <Text style={{ flex: 1, fontSize: 13, color: '#475569', lineHeight: 20 }}>
+            <Text
+              style={{
+                flex: 1,
+                fontSize: 13,
+                color: '#475569',
+                lineHeight: 20,
+              }}
+            >
               Nếu bạn cần hỗ trợ đặt lịch khám, tư vấn y tế hay hướng dẫn hệ
               thống, hãy chọn cách kết nối bên dưới nhé:
             </Text>
@@ -218,7 +242,9 @@ export function SupportScreen() {
               borderColor: '#BBF7D0',
             }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
               <View
                 style={{
                   width: 8,
@@ -227,15 +253,21 @@ export function SupportScreen() {
                   backgroundColor: '#16A34A',
                 }}
               />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#15803D' }}>
+              <Text
+                style={{ fontSize: 13, fontWeight: '600', color: '#15803D' }}
+              >
                 Đội ngũ sẵn sàng
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#15803D' }}>
+              <Text
+                style={{ fontSize: 10, fontWeight: '700', color: '#15803D' }}
+              >
                 THỨ 2 - THỨ 7
               </Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803D' }}>
+              <Text
+                style={{ fontSize: 13, fontWeight: '700', color: '#15803D' }}
+              >
                 08:00 - 17:30
               </Text>
             </View>
@@ -303,7 +335,14 @@ export function SupportScreen() {
 
         {/* ── DANH MỤC HỖ TRỢ ── */}
         <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: '700',
+              color: '#0F172A',
+              marginBottom: 12,
+            }}
+          >
             Chọn chủ đề cần hỗ trợ
           </Text>
           <View
@@ -361,7 +400,9 @@ export function SupportScreen() {
                 >
                   {cat.label}
                 </Text>
-                <Text style={{ fontSize: 10, fontWeight: '600', color: cat.color }}>
+                <Text
+                  style={{ fontSize: 10, fontWeight: '600', color: cat.color }}
+                >
                   {cat.sublabel}
                 </Text>
               </TouchableOpacity>
@@ -371,7 +412,14 @@ export function SupportScreen() {
 
         {/* ── CÂU HỎI THƯỜNG GẶP ── */}
         <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 12 }}>
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: '700',
+              color: '#0F172A',
+              marginBottom: 12,
+            }}
+          >
             Câu hỏi thường gặp
           </Text>
           <View
@@ -411,7 +459,11 @@ export function SupportScreen() {
                     marginTop: 1,
                   }}
                 >
-                  <MaterialIcons name={item.icon} size={15} color={item.color} />
+                  <MaterialIcons
+                    name={item.icon}
+                    size={15}
+                    color={item.color}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
@@ -447,7 +499,14 @@ export function SupportScreen() {
             borderColor: '#FECACA',
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 12,
+            }}
+          >
             <View
               style={{
                 width: 40,
@@ -461,7 +520,9 @@ export function SupportScreen() {
               <MaterialIcons name="report-problem" size={20} color="#DC2626" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#0F172A' }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: '700', color: '#0F172A' }}
+              >
                 Gặp sự cố?
               </Text>
               <Text style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
@@ -532,18 +593,34 @@ export function SupportScreen() {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#0F172A' }}>
+              <Text
+                style={{ fontSize: 16, fontWeight: '700', color: '#0F172A' }}
+              >
                 {(selectedCategory?.label ?? '').replace('\n', ' ')}
               </Text>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 2 }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: '600',
+                  color: '#64748B',
+                  marginTop: 2,
+                }}
+              >
                 {selectedCategory?.sublabel}
               </Text>
             </View>
           </View>
 
-          <Text style={{ marginTop: 12, fontSize: 13, color: '#475569', lineHeight: 20 }}>
-            Chuyên viên hỗ trợ sẽ tư vấn theo danh mục bạn vừa chọn. Bạn có thể bắt đầu chat
-            ngay hoặc gọi tổng đài để được xử lý nhanh hơn.
+          <Text
+            style={{
+              marginTop: 12,
+              fontSize: 13,
+              color: '#475569',
+              lineHeight: 20,
+            }}
+          >
+            Chuyên viên hỗ trợ sẽ tư vấn theo danh mục bạn vừa chọn. Bạn có thể
+            bắt đầu chat ngay hoặc gọi tổng đài để được xử lý nhanh hơn.
           </Text>
 
           <View style={{ marginTop: 14, gap: 10 }}>
@@ -587,7 +664,9 @@ export function SupportScreen() {
               }}
             >
               <MaterialIcons name="phone" size={16} color="#334155" />
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#334155' }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: '600', color: '#334155' }}
+              >
                 Gọi tổng đài 1900-2805
               </Text>
             </TouchableOpacity>
@@ -611,4 +690,3 @@ export function SupportScreen() {
 }
 
 export default SupportScreen;
-
