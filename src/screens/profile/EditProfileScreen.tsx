@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { useMyPatient, useUpdateMyUser } from '@/hooks/useProfile';
+import { useMyPatient, useUpdateMyPatient, useUpdateMyUser } from '@/hooks/useProfile';
 import { useAuthStore } from '@/store/auth.store';
 import type { components } from '@/types/generated/patient-api';
 
@@ -25,6 +25,7 @@ export function EditProfileScreen() {
   const authUser = useAuthStore((state) => state.user);
   const myPatientQuery = useMyPatient();
   const updateMyUser = useUpdateMyUser();
+  const updateMyPatient = useUpdateMyPatient();
 
   const patientUser = myPatientQuery.data?.user;
   const initialData = useMemo(
@@ -36,8 +37,15 @@ export function EditProfileScreen() {
       address: patientUser?.address ?? '',
       province: patientUser?.province ?? '',
       ward: patientUser?.ward ?? '',
+      bloodType: myPatientQuery.data?.bloodType ?? '',
+      emergencyContactName: myPatientQuery.data?.emergencyContactName ?? '',
+      emergencyContactPhone: myPatientQuery.data?.emergencyContactPhone ?? '',
+      emergencyContactRelationship: myPatientQuery.data?.emergencyContactRelationship ?? '',
+      insuranceProvider: myPatientQuery.data?.insuranceProvider ?? '',
+      insuranceNumber: myPatientQuery.data?.insuranceNumber ?? '',
+      insuranceExpiry: myPatientQuery.data?.insuranceExpiry ?? '',
     }),
-    [authUser?.fullName, patientUser],
+    [authUser?.fullName, patientUser, myPatientQuery.data],
   );
 
   const [fullName, setFullName] = useState('');
@@ -47,6 +55,13 @@ export function EditProfileScreen() {
   const [address, setAddress] = useState('');
   const [province, setProvince] = useState('');
   const [ward, setWard] = useState('');
+  const [bloodType, setBloodType] = useState('');
+  const [emergencyContactName, setEmergencyContactName] = useState('');
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState('');
+  const [insuranceProvider, setInsuranceProvider] = useState('');
+  const [insuranceNumber, setInsuranceNumber] = useState('');
+  const [insuranceExpiry, setInsuranceExpiry] = useState('');
 
   useEffect(() => {
     setFullName(initialData.fullName);
@@ -56,9 +71,17 @@ export function EditProfileScreen() {
     setAddress(initialData.address);
     setProvince(initialData.province);
     setWard(initialData.ward);
+    setBloodType(initialData.bloodType);
+    setEmergencyContactName(initialData.emergencyContactName);
+    setEmergencyContactPhone(initialData.emergencyContactPhone);
+    setEmergencyContactRelationship(initialData.emergencyContactRelationship);
+    setInsuranceProvider(initialData.insuranceProvider);
+    setInsuranceNumber(initialData.insuranceNumber);
+    setInsuranceExpiry(initialData.insuranceExpiry);
   }, [initialData]);
 
-  const canSubmit = fullName.trim().length > 0 && !updateMyUser.isPending;
+  const canSubmit =
+    fullName.trim().length > 0 && !updateMyUser.isPending && !updateMyPatient.isPending;
 
   const onSave = () => {
     const payload: UpdateUserDto = {
@@ -72,7 +95,26 @@ export function EditProfileScreen() {
     };
 
     updateMyUser.mutate(payload, {
-      onSuccess: () => router.back(),
+      onSuccess: () => {
+        if (myPatientQuery.data?.id) {
+          updateMyPatient.mutate(
+            {
+              bloodType: bloodType.trim() || undefined,
+              emergencyContactName: emergencyContactName.trim() || undefined,
+              emergencyContactPhone: emergencyContactPhone.trim() || undefined,
+              emergencyContactRelationship: emergencyContactRelationship.trim() || undefined,
+              insuranceProvider: insuranceProvider.trim() || undefined,
+              insuranceNumber: insuranceNumber.trim() || undefined,
+              insuranceExpiry: insuranceExpiry.trim() || undefined,
+            },
+            {
+              onSuccess: () => router.back(),
+            },
+          );
+        } else {
+          router.back();
+        }
+      },
     });
   };
 
@@ -171,6 +213,79 @@ export function EditProfileScreen() {
               placeholder="Nhập phường/xã"
               className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
             />
+
+            <View className="mb-4 mt-2 border-t border-slate-100 pt-4">
+              <Text className="mb-4 text-sm font-bold text-slate-900">Liên hệ khẩn cấp</Text>
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Họ và tên</Text>
+              <TextInput
+                value={emergencyContactName}
+                onChangeText={setEmergencyContactName}
+                placeholder="Tên người liên hệ"
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Số điện thoại</Text>
+              <TextInput
+                value={emergencyContactPhone}
+                onChangeText={setEmergencyContactPhone}
+                keyboardType="phone-pad"
+                placeholder="Số điện thoại"
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Mối quan hệ</Text>
+              <TextInput
+                value={emergencyContactRelationship}
+                onChangeText={setEmergencyContactRelationship}
+                placeholder="VD: Bố, Mẹ, Vợ..."
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+            </View>
+
+            <View className="mb-4 border-t border-slate-100 pt-4">
+              <Text className="mb-4 text-sm font-bold text-slate-900">Bảo hiểm & Y tế</Text>
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Nhà cung cấp bảo hiểm</Text>
+              <TextInput
+                value={insuranceProvider}
+                onChangeText={setInsuranceProvider}
+                placeholder="Nhà cung cấp"
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Số bảo hiểm y tế</Text>
+              <TextInput
+                value={insuranceNumber}
+                onChangeText={setInsuranceNumber}
+                placeholder="Số bảo hiểm"
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Ngày hết hạn (YYYY-MM-DD)</Text>
+              <TextInput
+                value={insuranceExpiry}
+                onChangeText={setInsuranceExpiry}
+                placeholder="2026-12-31"
+                className="mb-4 rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900"
+              />
+
+              <Text className="mb-2 text-xs font-semibold text-slate-500">Nhóm máu</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map((type) => {
+                  const selected = bloodType === type;
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      onPress={() => setBloodType(type)}
+                      className={`rounded-xl px-3 py-2 ${selected ? 'bg-blue-500' : 'bg-slate-100'}`}
+                    >
+                      <Text className={selected ? 'text-white' : 'text-slate-700'}>{type}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
           </View>
         </ScrollView>
 
