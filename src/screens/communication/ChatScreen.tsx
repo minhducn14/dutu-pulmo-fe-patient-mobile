@@ -1,10 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { useMyChatRooms } from '@/hooks/useChat';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { useAuthStore } from '@/store/auth.store';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
@@ -92,6 +93,10 @@ export function ChatScreen() {
   const user = useAuthStore((state) => state.user);
   const roomsQuery = useMyChatRooms();
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await roomsQuery.refetch();
+  });
+
   if (roomsQuery.isLoading) {
     return <Loading label="Đang tải tin nhắn..." />;
   }
@@ -143,6 +148,7 @@ export function ChatScreen() {
         <ScrollView
           className="flex-1 bg-white"
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Summary */}
           <View className="px-4 py-3">

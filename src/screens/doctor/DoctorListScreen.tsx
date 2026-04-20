@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { DoctorCard } from '@/components/doctor/DoctorCard';
@@ -16,6 +17,7 @@ import { DoctorFilterSheet } from '@/components/doctor/DoctorFilterSheet';
 import type { DoctorFilterState } from '@/components/doctor/DoctorFilterSheet';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePublicDoctors } from '@/hooks/useAppointments';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { theme } from '@/constants/theme';
 import type { AppointmentTypeFilter } from '@/services/appointment.service';
 
@@ -52,6 +54,10 @@ export function DoctorListScreen() {
     specialty: activeFilter.specialty || undefined,
     hospitalId: activeFilter.hospitalId || undefined,
     appointmentType: activeTab,
+  });
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await doctorsQuery.refetch();
   });
 
   const hasFilters = activeFilter.specialty || activeFilter.hospitalId;
@@ -235,6 +241,7 @@ export function DoctorListScreen() {
               <DoctorCard doctor={item} onPress={() => router.push(`/doctors/${item.id}`)} />
             )}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
         )
       }

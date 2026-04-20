@@ -10,12 +10,14 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { useChatMessages, useChatRoom, useSendChatMessage } from '@/hooks/useChat';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { useAuthStore } from '@/store/auth.store';
 import { APP_CONFIG } from '@/constants/config';
 
@@ -120,6 +122,10 @@ export function ChatRoomScreen() {
   const roomQuery = useChatRoom(chatroomId);
   const messagesQuery = useChatMessages(chatroomId);
   const sendMutation = useSendChatMessage();
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([roomQuery.refetch(), messagesQuery.refetch()]);
+  });
 
   // Merge server messages + realtime messages
   const serverMessages = messagesQuery.data ?? [];
@@ -291,6 +297,7 @@ export function ChatRoomScreen() {
           keyExtractor={(item, idx) => item.id ?? String(idx)}
           contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <View className="mt-20 items-center">
               <View className="mb-3 h-16 w-16 items-center justify-center rounded-full bg-blue-50">

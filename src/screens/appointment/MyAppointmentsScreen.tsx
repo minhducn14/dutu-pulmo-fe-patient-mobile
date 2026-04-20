@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PendingPaymentBanner } from '@/components/appointment/PendingPaymentBanner';
 import { APPOINTMENT_STATUS_CONFIG, FALLBACK_APPOINTMENT_STATUS } from '@/constants/status-configs';
 import { useAppointments } from '@/hooks/useAppointments';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 function AppointmentCard({
   appointment,
@@ -136,6 +137,10 @@ export function MyAppointmentsScreen() {
   const router = useRouter();
   const appointmentsQuery = useAppointments();
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await appointmentsQuery.refetch();
+  });
+
   if (appointmentsQuery.isLoading) {
     return <Loading label="Đang tải lịch khám..." />;
   }
@@ -160,6 +165,9 @@ export function MyAppointmentsScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-8"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <PendingPaymentBanner />
 

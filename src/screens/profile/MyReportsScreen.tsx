@@ -1,12 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { REPORT_STATUS_CONFIG } from '@/constants/status-configs';
 import { useReports } from '@/hooks/useReports';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 const REPORT_TYPE_LABEL: Record<string, string> = {
   doctor: 'Báo cáo bác sĩ',
@@ -86,6 +87,10 @@ export function MyReportsScreen() {
   const router = useRouter();
   const reportsQuery = useReports();
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await reportsQuery.refetch();
+  });
+
   if (reportsQuery.isLoading) return <Loading label="Đang tải báo cáo..." />;
 
   if (reportsQuery.isError) {
@@ -119,6 +124,7 @@ export function MyReportsScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-8"
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {reports.length === 0 ? (
           <View className="mt-16 items-center">

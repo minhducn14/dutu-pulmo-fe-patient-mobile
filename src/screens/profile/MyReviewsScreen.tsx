@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -7,6 +7,7 @@ import { Loading } from '@/components/ui/Loading';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ReviewItem } from '@/components/review/ReviewItem';
 import { useMyReviews, useDeleteReview } from '@/hooks/useReviews';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { Alert, Image } from 'react-native';
 import { theme } from '@/constants/theme';
 
@@ -15,6 +16,10 @@ export function MyReviewsScreen() {
   const { data: reviews, isLoading, isError, refetch } = useMyReviews();
   const deleteReview = useDeleteReview();
   console.log("reviews: ",reviews);
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await refetch();
+  });
   const handleDelete = (id: string) => {
     Alert.alert(
       'Xóa đánh giá',
@@ -63,6 +68,7 @@ export function MyReviewsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <View
             className="mb-4 overflow-hidden rounded-2xl bg-white"

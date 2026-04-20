@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -10,6 +10,7 @@ import {
   useMarkNotificationAsRead,
   useNotifications,
 } from '@/hooks/useNotifications';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import type { NotificationItem } from '@/types/notification.types';
 
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
@@ -102,6 +103,10 @@ export function NotificationsScreen() {
   const markOneMutation = useMarkNotificationAsRead();
   const markAllMutation = useMarkAllNotificationsAsRead();
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await notificationsQuery.refetch();
+  });
+
   if (notificationsQuery.isLoading)
     return <Loading label="Đang tải thông báo..." />;
 
@@ -162,6 +167,7 @@ export function NotificationsScreen() {
         <ScrollView
           className="flex-1 bg-white"
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {unreadCount > 0 && (
             <>

@@ -7,11 +7,13 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { medicalService } from '@/services/medical.service';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function InfoLine({
@@ -55,6 +57,10 @@ export function PrescriptionDetailScreen() {
     enabled: Boolean(prescriptionId),
   });
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([detailQuery.refetch(), pdfQuery.refetch()]);
+  });
+
   if (detailQuery.isLoading) return <Loading label="Đang tải đơn thuốc..." />;
 
   if (detailQuery.isError || !detailQuery.data) {
@@ -96,6 +102,7 @@ export function PrescriptionDetailScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-[120px]"
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* ── THÔNG TIN ĐƠN THUỐC ── */}
         <View

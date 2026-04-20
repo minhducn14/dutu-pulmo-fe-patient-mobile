@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  RefreshControl,
 } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 import { Loading } from '@/components/ui/Loading';
 import { medicalService } from '@/services/medical.service';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import {
@@ -174,6 +176,10 @@ export function MedicalRecordDetailScreen() {
     enabled: Boolean(recordId),
   });
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([detailQuery.refetch(), pdfQuery.refetch()]);
+  });
+
   if (detailQuery.isLoading) return <Loading label="Đang tải hồ sơ..." />;
 
   if (detailQuery.isError || !detailQuery.data) {
@@ -208,6 +214,7 @@ export function MedicalRecordDetailScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-[120px]"
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* ── THÔNG TIN HÀNH CHÍNH ── */}
         <View
@@ -257,7 +264,7 @@ export function MedicalRecordDetailScreen() {
             <TouchableOpacity
               onPress={() =>
                 router.push({
-                  pathname: '/(tabs)/medical/[recordId]',
+                  pathname: '/medical-records/[recordId]',
                   params: { recordId: (record as any).previousRecord.id },
                 })
               }

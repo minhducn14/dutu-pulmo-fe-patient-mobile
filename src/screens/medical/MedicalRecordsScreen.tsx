@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -11,6 +11,7 @@ import {
 } from '@/constants/status-configs';
 import { patientService } from '@/services/patient.service';
 import { useQuery } from '@tanstack/react-query';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 function MedicalRecordCard({
   record,
@@ -117,6 +118,10 @@ export function MedicalRecordsScreen() {
     enabled: Boolean(meQuery.data?.id),
   });
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([meQuery.refetch(), recordsQuery.refetch()]);
+  });
+
   if (meQuery.isLoading || recordsQuery.isLoading) {
     return <Loading label="Đang tải Hồ sơ bệnh án..." />;
   }
@@ -141,6 +146,7 @@ export function MedicalRecordsScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-8"
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Summary row */}
         {records.length > 0 && (

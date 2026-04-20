@@ -1,11 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View, Image } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View, Image, RefreshControl } from 'react-native';
 
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useFavorites, useRemoveFavorite } from '@/hooks/useFavorites';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { theme } from '@/constants/theme';
 
 type TabType = 'doctors' | 'hospitals';
@@ -13,8 +14,12 @@ type TabType = 'doctors' | 'hospitals';
 export function FavoriteListScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('doctors');
-  const { data: favorites, isLoading } = useFavorites();
+  const { data: favorites, isLoading, refetch } = useFavorites();
   const removeFavorite = useRemoveFavorite();
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await refetch();
+  });
 
   const filteredFavorites = favorites?.filter((f) =>
     activeTab === 'doctors' ? !!f.doctorId : !!f.hospitalId
@@ -135,6 +140,7 @@ export function FavoriteListScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingTop: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
     </View>

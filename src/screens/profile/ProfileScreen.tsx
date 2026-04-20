@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -23,6 +24,7 @@ import { useMyPatient, useProfile } from '@/hooks/useProfile';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
 import theme from '@/constants/theme';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 function MenuItem({
   icon,
@@ -120,6 +122,13 @@ export function ProfileScreen() {
   const { data: unreadData } = useNotificationUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([
+      myPatientQuery.refetch(),
+      profileQuery.refetch(),
+    ]);
+  });
+
   if (myPatientQuery.isLoading || profileQuery.isLoading) {
     return <Loading label="Đang tải hồ sơ..." />;
   }
@@ -214,6 +223,7 @@ export function ProfileScreen() {
         }}
         showsVerticalScrollIndicator={false}
         style={{ marginTop: -48 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* PROFILE CARD */}
         <View

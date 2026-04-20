@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { HospitalCard } from '@/components/hospital/HospitalCard';
@@ -17,6 +18,7 @@ import type { HospitalFilter } from '@/components/hospital/HospitalFilterSheet';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { theme } from '@/constants/theme';
 import { useHospitals } from '@/hooks/useHospitals';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 export function HospitalListScreen() {
   const router = useRouter();
@@ -40,6 +42,10 @@ export function HospitalListScreen() {
     city: activeFilter.city || undefined,
     page: 1,
     limit: 50,
+  });
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await hospitalsQuery.refetch();
   });
 
   const hasFilters = activeFilter.city || activeFilter.type !== 'all';
@@ -229,6 +235,7 @@ export function HospitalListScreen() {
             />
           )}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
 

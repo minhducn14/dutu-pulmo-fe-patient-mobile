@@ -13,6 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
@@ -32,6 +33,7 @@ import {
   APPOINTMENT_STATUS_CONFIG,
   FALLBACK_APPOINTMENT_STATUS,
 } from '@/constants/status-configs';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function QrCodeBox({ value }: { value: string }) {
@@ -120,6 +122,10 @@ export function AppointmentDetailScreen() {
   const cancelMutation = useCancelAppointment();
   const checkInMutation = useCheckInVideoCall();
   const myPatientQuery = useMyPatient();
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([detailQuery.refetch(), myPatientQuery.refetch()]);
+  });
 
   const handleShare = async () => {
     const a = detailQuery.data;
@@ -268,6 +274,7 @@ export function AppointmentDetailScreen() {
           className="flex-1"
           contentContainerClassName="p-4 pb-[120px]"
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* ── QR CARD ── */}
           <View className="overflow-hidden rounded-[20px] bg-white shadow-sm">

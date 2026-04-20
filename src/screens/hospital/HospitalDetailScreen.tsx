@@ -1,8 +1,9 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, ScrollView, Image, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, Image, Pressable, Linking, RefreshControl } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useHospitalDetail, useHospitalDoctors } from '@/hooks/useHospitals';
 import { useCheckFavoriteHospital, useAddFavorite, useRemoveFavorite } from '@/hooks/useFavorites';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 export function HospitalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,6 +14,10 @@ export function HospitalDetailScreen() {
   const { data: favoriteData } = useCheckFavoriteHospital(id ?? '');
   const addFavorite = useAddFavorite();
   const removeFavorite = useRemoveFavorite();
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([hospitalQuery.refetch(), doctorsQuery.refetch()]);
+  });
 
   const isSaved = !!favoriteData;
 
@@ -87,6 +92,7 @@ export function HospitalDetailScreen() {
           style={{ flex: 1, marginTop: -28 }}
           contentContainerStyle={{ paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Info card */}
           <View

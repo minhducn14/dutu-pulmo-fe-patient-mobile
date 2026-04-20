@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, View, RefreshControl } from 'react-native';
 
 import { DoctorAvatar } from '@/components/home/DoctorAvatar';
 import { FacilityCard } from '@/components/home/FacilityCard';
@@ -14,6 +14,7 @@ import { SpecialtyGrid } from '@/components/home/SpecialtyGrid';
 import { theme } from '@/constants/theme';
 import { usePublicDoctors, useSpecialties } from '@/hooks/useAppointments';
 import { useHospitals } from '@/hooks/useHospitals';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { Loading } from '@/components/ui/Loading';
 import { PendingPaymentBanner } from '@/components/appointment/PendingPaymentBanner';
 
@@ -24,6 +25,14 @@ export function HomeScreen() {
   const doctorsQuery = usePublicDoctors({ page: 1, limit: 4 });
   const hospitalsQuery = useHospitals({ page: 1, limit: 4 });
   const specialtiesQuery = useSpecialties();
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([
+      doctorsQuery.refetch(),
+      hospitalsQuery.refetch(),
+      specialtiesQuery.refetch(),
+    ]);
+  });
 
   const quickActions: QuickAction[] = [
     {
@@ -108,7 +117,11 @@ export function HomeScreen() {
   const doctors = doctorsQuery.data?.items ?? [];
 
   return (
-    <ScrollView className="flex-1 bg-slate-50" showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      className="flex-1 bg-slate-50" 
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <Header />
 
       <View className="px-4 pt-10">

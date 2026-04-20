@@ -1,13 +1,14 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { FALLBACK_PRESCRIPTION_STATUS, PRESCRIPTION_STATUS_CONFIG } from '@/constants/status-configs';
 import { patientService } from '@/services/patient.service';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 function PrescriptionCard({
   prescription,
@@ -95,6 +96,10 @@ export function PrescriptionsScreen() {
     enabled: Boolean(meQuery.data?.id),
   });
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([meQuery.refetch(), prescriptionsQuery.refetch()]);
+  });
+
   if (meQuery.isLoading || prescriptionsQuery.isLoading) {
     return <Loading label="Đang tải đơn thuốc..." />;
   }
@@ -116,6 +121,7 @@ export function PrescriptionsScreen() {
         className="flex-1"
         contentContainerClassName="p-4 pb-8"
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Summary */}
         {prescriptions.length > 0 && (

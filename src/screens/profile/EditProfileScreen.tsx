@@ -10,10 +10,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { useMyPatient, useUpdateMyPatient, useUpdateMyUser } from '@/hooks/useProfile';
 import { useAuthStore } from '@/store/auth.store';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import type { components } from '@/types/generated/patient-api';
 
 type UpdateUserDto = components['schemas']['UpdateUserDto'];
@@ -118,6 +120,10 @@ export function EditProfileScreen() {
     });
   };
 
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await myPatientQuery.refetch();
+  });
+
   if (myPatientQuery.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-slate-50">
@@ -143,7 +149,11 @@ export function EditProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView
+          className="flex-1 px-4 pt-4"
+          contentContainerStyle={{ paddingBottom: 24 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
           <View className="rounded-2xl bg-white p-4">
             <Text className="mb-2 text-xs font-semibold text-slate-500">Họ và tên</Text>
             <TextInput

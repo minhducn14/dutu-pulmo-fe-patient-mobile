@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { AccordionItem } from '@/components/doctor/AccordionItem';
@@ -31,6 +32,7 @@ import {
 import type { AppointmentTypeFilter } from '@/services/appointment.service';
 import { chatService } from '@/services/chat.service';
 import { useAuthStore } from '@/store/auth.store';
+import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 type DoctorResponseDto = any;
 type TimeSlotResponseDto = any;
 import { getDoctorTitleLabel, getSpecialtyLabel } from '@/utils/doctor-display';
@@ -91,6 +93,15 @@ export function DoctorDetailScreen() {
     baseDates[baseDates.length - 1]?.date ?? selectedDate,
     appointmentTypeFilter,
   );
+
+  const { refreshing, onRefresh } = useRefreshByUser(async () => {
+    await Promise.all([
+      doctorQuery.refetch(),
+      reviewsQuery.refetch(),
+      slotsQuery.refetch(),
+      summaryQuery.refetch(),
+    ]);
+  });
 
   useEffect(() => {
     setSelectedSlotId(null);
@@ -229,6 +240,7 @@ export function DoctorDetailScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View className="mb-2 bg-white px-4 pb-5 pt-4 shadow-sm">
           <View className="mb-5 flex-row rounded-xl bg-gray-100 p-1">
