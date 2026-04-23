@@ -6,10 +6,10 @@ import {
   Platform,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
 import { Send, Bot, User, RotateCcw, Sparkles } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAIChatStore, Message } from '@/store/ai-chat.store';
 import { aiChatBotService } from '@/services/ai-chatbot.service';
