@@ -17,7 +17,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "production",
+        "NODE_ENV": "preview",
         "EXPO_PUBLIC_APP_NAME": "DutuPulmo Patient App",
         "EXPO_PUBLIC_API_URL": "https://du-tu-pulmo-be-ehk9v.ondigitalocean.app",
         "EXPO_PUBLIC_AI_WEBHOOK_URL": "https://n8n-production-a478.up.railway.app/webhook/72d0ce17-8cc0-4939-b6e3-2689ddd093bd"
