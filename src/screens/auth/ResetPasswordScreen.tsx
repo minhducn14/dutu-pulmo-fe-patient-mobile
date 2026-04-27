@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
@@ -33,6 +34,7 @@ export function ResetPasswordScreen() {
   const router = useRouter();
   const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   const resetPasswordMutation = useResetPassword();
+  const insets = useSafeAreaInsets();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -64,7 +66,10 @@ export function ResetPasswordScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-16">
+    <View 
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: Math.max(insets.top, 24) }}
+    >
       <Text className="text-3xl font-bold text-slate-900">Mật khẩu mới</Text>
       <Text className="mt-2 text-slate-500">
         Đặt mật khẩu mới cho tài khoản của bạn.

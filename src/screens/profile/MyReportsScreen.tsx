@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -85,6 +86,7 @@ function ReportCard({ report }: { report: any }) {
 
 export function MyReportsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const reportsQuery = useReports();
 
   const { refreshing, onRefresh } = useRefreshByUser(async () => {
@@ -122,7 +124,7 @@ export function MyReportsScreen() {
       />
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4 pb-8"
+        contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 24) }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >

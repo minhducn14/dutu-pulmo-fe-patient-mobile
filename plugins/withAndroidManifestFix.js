@@ -44,6 +44,15 @@ module.exports = function withAndroidManifestFix(config) {
       return true;
     });
 
+    const activities = application['activity'] || [];
+    const mainActivity = activities.find(
+      (a) => a.$?.['android:name'] === '.MainActivity'
+    );
+    if (mainActivity) {
+      mainActivity.$['android:windowSoftInputMode'] = 'adjustResize';
+    }
+
+
     return config;
   });
 };

@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -99,6 +100,7 @@ function NotificationCard({
 }
 
 export function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const notificationsQuery = useNotifications({ page: 1, limit: 50 });
   const markOneMutation = useMarkNotificationAsRead();
   const markAllMutation = useMarkAllNotificationsAsRead();
@@ -168,6 +170,7 @@ export function NotificationsScreen() {
           className="flex-1 bg-white"
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
         >
           {unreadCount > 0 && (
             <>

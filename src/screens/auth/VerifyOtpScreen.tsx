@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useForgotPassword } from '@/hooks/useForgotPassword';
 import { useResendOtp } from '@/hooks/useResendOtp';
@@ -21,6 +22,7 @@ export function VerifyOtpScreen() {
     email: string;
     mode?: 'verify' | 'reset';
   }>();
+  const insets = useSafeAreaInsets();
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +134,10 @@ export function VerifyOtpScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-16">
+    <View 
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: Math.max(insets.top, 20) }}
+    >
       <TouchableOpacity className="mb-6 self-start" onPress={() => router.back()}>
         <Text className="text-slate-500 text-base">← Quay lại</Text>
       </TouchableOpacity>

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -23,6 +24,7 @@ export function PaymentScreen() {
   const { appointmentId } = useLocalSearchParams<{
     appointmentId: string;
   }>();
+  const insets = useSafeAreaInsets();
 
   const [paymentStatus, setPaymentStatus] = useState<string | undefined>();
 
@@ -125,7 +127,7 @@ export function PaymentScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="pb-[120px]"
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── TỔNG THANH TOÁN ── */}

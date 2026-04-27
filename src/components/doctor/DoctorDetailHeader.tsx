@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { theme } from '@/constants/theme';
@@ -29,12 +30,13 @@ export function DoctorDetailHeader({
   onToggleSave,
   onChat,
 }: DoctorDetailHeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
     <>
       <View
         style={{
           backgroundColor: theme.colors.primary,
-          paddingTop: 52,
+          paddingTop: Math.max(insets.top, 16) + 8,
           paddingBottom: 12,
           paddingHorizontal: 16,
         }}

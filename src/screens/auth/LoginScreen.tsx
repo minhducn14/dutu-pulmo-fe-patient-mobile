@@ -4,6 +4,7 @@ import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useLogin } from '@/hooks/useLogin';
@@ -20,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 export function LoginScreen() {
   const router = useRouter();
   const loginMutation = useLogin();
+  const insets = useSafeAreaInsets();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -44,7 +46,10 @@ export function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-16">
+    <View 
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: Math.max(insets.top, 24) }}
+    >
       {/* Logo */}
       <View className="mb-6 items-center">
         <Image

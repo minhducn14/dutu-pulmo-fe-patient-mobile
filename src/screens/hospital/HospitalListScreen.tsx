@@ -11,6 +11,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HospitalCard } from '@/components/hospital/HospitalCard';
 import { HospitalFilterSheet } from '@/components/hospital/HospitalFilterSheet';
@@ -22,6 +23,7 @@ import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 
 export function HospitalListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
@@ -227,7 +229,7 @@ export function HospitalListScreen() {
         <FlatList
           data={hospitals}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 32) }}
           renderItem={({ item }) => (
             <HospitalCard
               hospital={item}

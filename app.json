@@ -20,11 +20,8 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
-          "remote-notification",
-          "fetch",
           "remote-notification"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
+        ]
       },
       "bundleIdentifier": "com.minhduc14.dutupulmofepatientmobile"
     },
@@ -36,6 +33,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "package": "com.minhduc14.dutupulmofepatientmobile",
       "googleServicesFile": "./google-services.json",
@@ -50,8 +48,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE_MICROPHONE",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.SYSTEM_ALERT_WINDOW"
+        "android.permission.BLUETOOTH_CONNECT"
       ]
     },
     "web": {

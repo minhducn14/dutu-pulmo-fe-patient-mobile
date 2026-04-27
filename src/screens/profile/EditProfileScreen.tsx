@@ -12,6 +12,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMyPatient, useUpdateMyPatient, useUpdateMyUser } from '@/hooks/useProfile';
 import { useAuthStore } from '@/store/auth.store';
@@ -24,6 +25,7 @@ type GenderValue = NonNullable<UpdateUserDto['gender']>;
 
 export function EditProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const authUser = useAuthStore((state) => state.user);
   const myPatientQuery = useMyPatient();
   const updateMyUser = useUpdateMyUser();
@@ -134,7 +136,10 @@ export function EditProfileScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="flex-row items-center gap-3 bg-blue-500 px-4 pb-4 pt-12">
+      <View 
+        className="flex-row items-center gap-3 bg-blue-500 px-4 pb-4 shadow-sm"
+        style={{ paddingTop: insets.top + 8 }}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -298,8 +303,11 @@ export function EditProfileScreen() {
             </View>
           </View>
         </ScrollView>
-
-        <View className="border-t border-slate-200 bg-white p-4">
+ 
+        <View 
+          className="border-t border-slate-200 bg-white p-4"
+          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+        >
           <TouchableOpacity
             onPress={onSave}
             disabled={!canSubmit}

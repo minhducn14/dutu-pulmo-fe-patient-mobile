@@ -216,7 +216,7 @@ export function AppointmentSuccessScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="pb-[120px]"
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── SUCCESS BADGE ── */}

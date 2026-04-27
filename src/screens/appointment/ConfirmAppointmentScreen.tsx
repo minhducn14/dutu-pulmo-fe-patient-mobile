@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RenderHtml from 'react-native-render-html';
 
 import { Loading } from '@/components/ui/Loading';
@@ -32,6 +33,7 @@ import { getDoctorTitleLabel, getSpecialtyLabel } from '@/utils/doctor-display';
 // ══════════════════════════════════════════════════════════════════════════════
 export function ConfirmAppointmentScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const draft = useBookingStore((s) => s.draft);
   const clearDraft = useBookingStore((s) => s.clearDraft);
@@ -135,7 +137,7 @@ export function ConfirmAppointmentScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="pb-[120px]"
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 120 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── THÔNG TIN ĐĂNG KÝ ── */}
@@ -439,10 +441,9 @@ export function ConfirmAppointmentScreen() {
 
       {/* FIXED CTA */}
       <View
-        className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${
-          Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
-        }`}
+        className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3"
         style={{
+          paddingBottom: Math.max(insets.bottom, 12),
           shadowColor: '#000',
           shadowOpacity: 0.08,
           shadowOffset: { width: 0, height: -4 },

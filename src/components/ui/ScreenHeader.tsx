@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, ViewStyle, StyleProp } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
@@ -12,6 +12,7 @@ export interface ScreenHeaderProps {
   hideBack?: boolean;
   rightSlot?: ReactNode;
   backgroundColor?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function ScreenHeader({
@@ -20,6 +21,7 @@ export function ScreenHeader({
   hideBack = false,
   rightSlot,
   backgroundColor = theme.colors.primary,
+  style,
 }: ScreenHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -27,17 +29,20 @@ export function ScreenHeader({
 
   return (
     <View
-      style={{
-        backgroundColor,
-        paddingTop: insets.top + 12,
-        paddingBottom: 16,
-        paddingHorizontal: theme.spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-      }}
+      style={[
+        {
+          backgroundColor,
+          paddingTop: insets.top + 12,
+          paddingBottom: 16,
+          paddingHorizontal: theme.spacing.lg,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+        },
+        style,
+      ]}
     >
       {!hideBack ? (
         <Pressable

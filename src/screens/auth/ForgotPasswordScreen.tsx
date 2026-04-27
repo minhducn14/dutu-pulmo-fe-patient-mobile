@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ type FormData = z.infer<typeof schema>;
 export function ForgotPasswordScreen() {
   const router = useRouter();
   const forgotPasswordMutation = useForgotPassword();
+  const insets = useSafeAreaInsets();
 
   const {
     control,
@@ -44,7 +46,10 @@ export function ForgotPasswordScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-16">
+    <View 
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: Math.max(insets.top, 24) }}
+    >
       <Text className="text-3xl font-bold text-slate-900">Quên mật khẩu</Text>
       <Text className="mt-2 text-slate-500">
         Nhập email liên kết với tài khoản để nhận mã xác thực khôi phục mật khẩu.

@@ -9,8 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Send, Bot, User, RotateCcw, Sparkles } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAIChatStore, Message } from '@/store/ai-chat.store';
 import { aiChatBotService } from '@/services/ai-chatbot.service';
 import { TypingEffect } from '@/components/chat/TypingEffect';
@@ -25,6 +24,7 @@ export function AIChatBotScreen() {
   const [inputText, setInputText] = useState('');
   const { messages, sessionId, isLoading, addMessage, setSessionId, setLoading, clearHistory } =
     useAIChatStore();
+  const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
 
   const handleSend = useCallback(async (text?: string) => {
@@ -140,7 +140,7 @@ export function AIChatBotScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]">
+    <View className="flex-1 bg-[#F8FAFC]">
       <ScreenHeader
         title="Trợ lý AI"
         rightSlot={
@@ -183,7 +183,10 @@ export function AIChatBotScreen() {
           }
         />
 
-        <View className="border-t border-slate-100 bg-white p-4">
+        <View 
+          className="border-t border-slate-100 bg-white p-4"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+        >
           <View className="flex-row items-center gap-3">
             <View className="flex-1">
               <Input
@@ -207,7 +210,7 @@ export function AIChatBotScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -9,6 +9,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -43,6 +44,7 @@ function InfoLine({
 // ══════════════════════════════════════════════════════════════════════════════
 export function PrescriptionDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { prescriptionId } = useLocalSearchParams<{ prescriptionId: string }>();
 
   const detailQuery = useQuery({
@@ -86,7 +88,10 @@ export function PrescriptionDetailScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* HEADER */}
-      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
+      <View 
+        className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 shadow-sm"
+        style={{ paddingTop: insets.top + 8 }}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -100,7 +105,7 @@ export function PrescriptionDetailScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4 pb-[120px]"
+        contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 16) + 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >

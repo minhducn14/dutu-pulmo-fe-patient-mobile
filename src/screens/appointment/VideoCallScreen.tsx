@@ -633,7 +633,7 @@ export function VideoCallScreen() {
 
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 16) + 120 }}
           showsVerticalScrollIndicator={false}
         >
           <StateCard

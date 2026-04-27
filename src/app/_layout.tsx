@@ -8,6 +8,7 @@ import { AppQueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/store/auth.store';
 import { Loading } from '@/components/ui/Loading';
 import { startPushListeners } from '@/services/push-listener.service';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Redirect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
@@ -51,15 +52,17 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <AppQueryProvider>
-      <StatusBar style="dark" />
-      <AuthGuard>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </AuthGuard>
-    </AppQueryProvider>
+    <SafeAreaProvider>
+      <AppQueryProvider>
+        <StatusBar style="dark" />
+        <AuthGuard>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </AuthGuard>
+      </AppQueryProvider>
+    </SafeAreaProvider>
   );
 }

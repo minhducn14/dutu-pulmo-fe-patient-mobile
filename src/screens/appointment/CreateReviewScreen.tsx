@@ -12,6 +12,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { theme } from '@/constants/theme';
@@ -20,6 +21,7 @@ import { useAppointmentDetail } from '@/hooks/useAppointments';
 
 export function CreateReviewScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -66,6 +68,7 @@ export function CreateReviewScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
       className="flex-1 bg-white"
     >
       <ScreenHeader title="Đánh giá bác sĩ" onBack={() => router.back()} />
@@ -132,7 +135,7 @@ export function CreateReviewScreen() {
           </Text>
         </TouchableOpacity>
         
-        <View className="h-10" />
+        <View style={{ height: Math.max(insets.bottom, 24) }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

@@ -11,6 +11,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DoctorCard } from '@/components/doctor/DoctorCard';
 import { DoctorFilterSheet } from '@/components/doctor/DoctorFilterSheet';
@@ -23,6 +24,7 @@ import type { AppointmentTypeFilter } from '@/services/appointment.service';
 
 export function DoctorListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ specialty?: string }>();
   const [activeTab, setActiveTab] = useState<AppointmentTypeFilter>('all');
   const [search, setSearch] = useState('');
@@ -236,7 +238,7 @@ export function DoctorListScreen() {
           <FlatList
             data={doctors}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 32) }}
             renderItem={({ item }) => (
               <DoctorCard doctor={item} onPress={() => router.push(`/doctors/${item.id}`)} />
             )}

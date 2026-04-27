@@ -1,6 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
 import { useNotificationUnreadCount } from '@/hooks/useNotifications';
@@ -9,6 +10,7 @@ import { useAuthStore } from '@/store/auth.store';
 export function Header() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const { data: unreadData } = useNotificationUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
 
@@ -18,7 +20,10 @@ export function Header() {
   else if (currentHour < 18) greeting = 'Chào buổi chiều!';
 
   return (
-    <View className="bg-primary pt-14 pb-14 px-4 rounded-b-3xl">
+    <View 
+      className="bg-primary pb-14 px-4 rounded-b-3xl"
+      style={{ paddingTop: Math.max(insets.top, 16) + 12 }}
+    >
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center gap-3">
           <View className="flex-row items-center gap-2 pr-3 border-r border-white/20">

@@ -10,6 +10,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccordionItem } from '@/components/doctor/AccordionItem';
 import { DatePicker } from '@/components/doctor/DatePicker';
@@ -60,6 +61,7 @@ type TabType = 'appointment' | 'consultation';
 
 export function DoctorDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { doctorId } = useLocalSearchParams<{ doctorId: string }>();
   const [activeTab, setActiveTab] = useState<TabType>('appointment');
   const [searchDate, setSearchDate] = useState(new Date());
@@ -238,7 +240,7 @@ export function DoctorDetailScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 140 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
@@ -499,7 +501,10 @@ export function DoctorDetailScreen() {
         </Modal>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-4 pb-6 pt-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <View 
+        className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-4 pt-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
+        style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+      >
         <TouchableOpacity
           onPress={handleChat}
           disabled={!canChat}

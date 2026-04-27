@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, FlatList, Text, TouchableOpacity, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -13,6 +14,7 @@ import { theme } from '@/constants/theme';
 
 export function MyReviewsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: reviews, isLoading, isError, refetch } = useMyReviews();
   const deleteReview = useDeleteReview();
   console.log("reviews: ",reviews);
@@ -54,13 +56,15 @@ export function MyReviewsScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       <View
-        className="bg-primary pb-4"
+        className="bg-primary"
         style={{
+          paddingTop: insets.top,
           borderBottomLeftRadius: 24,
           borderBottomRightRadius: 24,
+          paddingBottom: 16,
         }}
       >
-        <ScreenHeader title="Đánh giá của tôi" onBack={() => router.back()} />
+        <ScreenHeader title="Đánh giá của tôi" onBack={() => router.back()} style={{ paddingTop: 0 }} />
       </View>
 
       <FlatList

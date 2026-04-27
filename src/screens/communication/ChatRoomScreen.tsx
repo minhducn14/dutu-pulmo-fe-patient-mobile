@@ -12,6 +12,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { io, Socket } from 'socket.io-client';
 import Animated, {
   useSharedValue,
@@ -143,6 +144,7 @@ function TypingIndicator({ name }: { name: string }) {
 export function ChatRoomScreen() {
   const router = useRouter();
   const { chatroomId } = useLocalSearchParams<{ chatroomId: string }>();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -290,8 +292,12 @@ export function ChatRoomScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {/* HEADER */}
-      <View className="flex-row items-center gap-3 bg-primary px-4 pb-4 pt-12">
+      {/* Header */}
+      <View 
+        className="flex-row items-center gap-3 bg-blue-500 px-4 pb-3 shadow-sm"
+        style={{ paddingTop: insets.top + 8 }}
+      >
+        {/* Back button */}
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -333,8 +339,8 @@ export function ChatRoomScreen() {
       {/* Messages */}
       <KeyboardAvoidingView
         className="flex-1"
-        behavior="padding"
-        keyboardVerticalOffset={90}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -374,9 +380,9 @@ export function ChatRoomScreen() {
 
         {/* Input bar */}
         <View
-          className={`flex-row items-end gap-2 border-t border-slate-100 bg-white px-3 pt-3 ${Platform.OS === 'ios' ? 'pb-8' : 'pb-3'
-            }`}
+          className="flex-row items-end gap-2 border-t border-slate-100 bg-white px-3 pt-3"
           style={{
+            paddingBottom: Math.max(insets.bottom, 12),
             shadowColor: '#000',
             shadowOpacity: 0.06,
             shadowOffset: { width: 0, height: -2 },
@@ -399,7 +405,7 @@ export function ChatRoomScreen() {
                 style={{ 
                   paddingTop: 0, 
                   paddingBottom: 0,
-                  maxHeight: 110,
+                  maxHeight: 110, // Giới hạn khoảng 5 dòng (mỗi dòng ~20-22px)
                 }}
               />
             </View>

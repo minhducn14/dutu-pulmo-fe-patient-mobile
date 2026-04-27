@@ -10,6 +10,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RenderHtml from 'react-native-render-html';
 import { Loading } from '@/components/ui/Loading';
 import { medicalService } from '@/services/medical.service';
@@ -162,6 +163,7 @@ function StatusBadge({
 
 export function MedicalRecordDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { recordId } = useLocalSearchParams<{ recordId: string }>();
 
   const detailQuery = useQuery({
@@ -212,7 +214,7 @@ export function MedicalRecordDetailScreen() {
       <ScreenHeader title="Chi tiết Hồ sơ bệnh án" />
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4 pb-[120px]"
+        contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 16) + 120 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >

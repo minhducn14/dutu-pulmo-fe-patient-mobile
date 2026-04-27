@@ -272,7 +272,7 @@ export function AppointmentDetailScreen() {
 
         <ScrollView
           className="flex-1"
-          contentContainerClassName="p-4 pb-[120px]"
+          contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 16) + 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >

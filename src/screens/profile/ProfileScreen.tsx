@@ -11,6 +11,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -110,6 +111,7 @@ function StatItem({
 
 export function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const logout = useLogout();
@@ -203,12 +205,10 @@ export function ProfileScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       <View
-        className="bg-primary pb-8"
+        className="bg-primary"
         style={{
-          paddingBottom: 38,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          paddingTop: insets.top,
+          paddingBottom: 48,
           borderBottomLeftRadius: 24,
           borderBottomRightRadius: 24,
         }}
@@ -219,7 +219,7 @@ export function ProfileScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+          paddingBottom: Math.max(insets.bottom, 24) + 16,
         }}
         showsVerticalScrollIndicator={false}
         style={{ marginTop: -48 }}

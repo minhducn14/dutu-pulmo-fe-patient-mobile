@@ -2,6 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View, Image, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Loading } from '@/components/ui/Loading';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -13,6 +14,7 @@ type TabType = 'doctors' | 'hospitals';
 
 export function FavoriteListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('doctors');
   const { data: favorites, isLoading, refetch } = useFavorites();
   const removeFavorite = useRemoveFavorite();
@@ -80,13 +82,15 @@ export function FavoriteListScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       <View
-        className="bg-primary pb-6"
+        className="bg-primary"
         style={{
+          paddingTop: insets.top,
           borderBottomLeftRadius: 24,
           borderBottomRightRadius: 24,
+          paddingBottom: 24,
         }}
       >
-        <ScreenHeader title="Yêu thích" onBack={() => router.back()} />
+        <ScreenHeader title="Yêu thích" onBack={() => router.back()} style={{ paddingTop: 0 }} />
 
         {/* Pill-style Tabs */}
         <View className="mx-4 mt-2 flex-row rounded-xl bg-white/20 p-1">

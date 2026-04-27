@@ -14,6 +14,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { useCreateReport } from '@/hooks/useReports';
@@ -96,6 +97,7 @@ function SelectionCard({
 // ══════════════════════════════════════════════════════════════════════════════
 export function ReportIssueScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const createMutation = useCreateReport();
 
   // Pickers State
@@ -162,7 +164,10 @@ export function ReportIssueScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* HEADER */}
-      <View className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 pt-12">
+      <View 
+        className="flex-row items-center justify-between bg-blue-500 px-4 pb-4 shadow-sm"
+        style={{ paddingTop: insets.top + 8 }}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -178,7 +183,7 @@ export function ReportIssueScreen() {
         className="flex-1"
         contentContainerStyle={{
           padding: 16,
-          paddingBottom: Platform.OS === 'ios' ? 120 : 100,
+          paddingBottom: Math.max(insets.bottom, 24) + 100,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
@@ -318,10 +323,9 @@ export function ReportIssueScreen() {
 
       {/* FIXED BOTTOM */}
       <View
-        className={`absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3 ${
-          Platform.OS === 'ios' ? 'pb-9' : 'pb-4'
-        }`}
+        className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white px-4 pt-3"
         style={{
+          paddingBottom: Math.max(insets.bottom, 12),
           shadowColor: '#000',
           shadowOpacity: 0.08,
           shadowOffset: { width: 0, height: -4 },

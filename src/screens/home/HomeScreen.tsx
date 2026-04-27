@@ -1,6 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DoctorAvatar } from '@/components/home/DoctorAvatar';
 import { FacilityCard } from '@/components/home/FacilityCard';
@@ -22,6 +23,7 @@ import { SAMPLE_NEWS } from '@/constants/news-data';
 
 export function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const doctorsQuery = usePublicDoctors({ page: 1, limit: 4 });
   const hospitalsQuery = useHospitals({ page: 1, limit: 4 });
   const specialtiesQuery = useSpecialties();
@@ -121,6 +123,7 @@ export function HomeScreen() {
       className="flex-1 bg-slate-50" 
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
     >
       <Header />
 

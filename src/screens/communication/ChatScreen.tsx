@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Platform, ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -90,6 +91,7 @@ function ChatRoomCard({
 // ══════════════════════════════════════════════════════════════════════════════
 export function ChatScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const roomsQuery = useMyChatRooms();
 
@@ -149,6 +151,7 @@ export function ChatScreen() {
           className="flex-1 bg-white"
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
         >
           {/* Summary */}
           <View className="px-4 py-3">

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
@@ -50,6 +51,7 @@ type FormData = z.infer<typeof schema>;
 export function RegisterScreen() {
   const router = useRouter();
   const registerMutation = useRegister();
+  const insets = useSafeAreaInsets();
 
   const {
     control,
@@ -87,7 +89,10 @@ export function RegisterScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-14">
+    <View 
+      className="flex-1 bg-white px-6"
+      style={{ paddingTop: Math.max(insets.top, 20) }}
+    >
       <Text className="text-3xl font-bold text-slate-900">Tạo tài khoản</Text>
       <Text className="mt-2 text-slate-500">
         Bắt đầu hành trình chăm sóc sức khỏe phổi của bạn.

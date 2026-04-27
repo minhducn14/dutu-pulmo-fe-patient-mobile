@@ -1,5 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, ScrollView, Image, Pressable, Linking, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useHospitalDetail, useHospitalDoctors } from '@/hooks/useHospitals';
 import { useCheckFavoriteHospital, useAddFavorite, useRemoveFavorite } from '@/hooks/useFavorites';
@@ -8,6 +9,7 @@ import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 export function HospitalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const hospitalQuery = useHospitalDetail(id);
   const doctorsQuery = useHospitalDoctors(id, 1, 10);
 
@@ -36,7 +38,7 @@ export function HospitalDetailScreen() {
       <View
         style={{
           backgroundColor: '#0A7CFF',
-          paddingTop: 52,
+          paddingTop: Math.max(insets.top, 24),
           paddingBottom: 56,
           paddingHorizontal: 16,
         }}
