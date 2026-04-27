@@ -13,6 +13,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { io, Socket } from 'socket.io-client';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
@@ -82,23 +90,49 @@ function MessageBubble({
 }
 
 // ─── Typing indicator ──────────────────────────────────────────────────────────
+function TypingDot({ delay }: { delay: number }) {
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(-4, { duration: 400 }),
+          withTiming(0, { duration: 400 })
+        ),
+        -1,
+        true
+      )
+    );
+  }, [delay, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={animatedStyle}
+      className="h-1.5 w-1.5 rounded-full bg-slate-300"
+    />
+  );
+}
+
 function TypingIndicator({ name }: { name: string }) {
   return (
     <View className="mb-2 flex-row items-end gap-2">
       <View className="mb-4 h-7 w-7 items-center justify-center rounded-full bg-blue-100">
         <MaterialIcons name="person" size={14} color="#60a5fa" />
       </View>
-      <View className="rounded-[18px] rounded-tl-[4px] bg-white px-4 py-3">
-        <View className="flex-row items-center gap-1">
-          <Text className="text-[11px] text-slate-400 italic">{name} đang nhập</Text>
-          <View className="flex-row gap-0.5">
-            {[0, 1, 2].map((i) => (
-              <View
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-slate-400"
-              />
-            ))}
+      <View className="rounded-[18px] rounded-tl-[4px] bg-white px-4 py-3 border border-slate-50">
+        <View className="flex-row items-center gap-2">
+          <View className="flex-row gap-1">
+            <TypingDot delay={0} />
+            <TypingDot delay={150} />
+            <TypingDot delay={300} />
           </View>
+          <Text className="text-[11px] font-medium text-slate-400">{name} đang nhập...</Text>
         </View>
       </View>
     </View>
@@ -117,6 +151,8 @@ export function ChatRoomScreen() {
   const [realtimeMessages, setRealtimeMessages] = useState<any[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingEmitAtRef = useRef(0);
+  const isTypingRef = useRef(false);
   const flatListRef = useRef<FlatList>(null);
 
   const roomQuery = useChatRoom(chatroomId);
@@ -162,24 +198,17 @@ export function ChatRoomScreen() {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     });
 
-    socket.on('user-typing', ({ users }: { chatroomId: string; users: any[] }) => {
-      setTypingUsers(
-        users
-          .filter((u) => u.userId !== user?.id)
-          .map((u) => ({ userId: u.userId, fullName: u.fullName })),
-      );
-    });
-
     socket.on('connect_error', (err) => {
       console.warn('[ChatSocket] connect_error:', err.message);
     });
 
     return () => {
+      console.log('[ChatSocket] Disconnecting socket');
       socket.emit('leave-room', { chatroomId });
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [chatroomId, accessToken]);
+  }, [chatroomId, accessToken, user?.id]);
 
   // ── Scroll to bottom on load ────────────────────────────────────────────────
   useEffect(() => {
@@ -188,17 +217,33 @@ export function ChatRoomScreen() {
     }
   }, [messagesQuery.isFetched]);
 
+  const handleEmitTyping = (isTyping: boolean, force = false) => {
+    if (!chatroomId || !socketRef.current?.connected) return;
+    
+    // Chỉ gửi khi có sự thay đổi trạng thái hoặc buộc gửi (force)
+    if (!force && isTypingRef.current === isTyping) return;
+
+    const now = Date.now();
+    // Throttling: giới hạn tần suất gửi isTyping: true (300ms)
+    if (!force && isTyping && now - lastTypingEmitAtRef.current < 300) return;
+
+    lastTypingEmitAtRef.current = now;
+    isTypingRef.current = isTyping;
+    
+    socketRef.current.emit('typing', { 
+      chatroomId: chatroomId.trim(), 
+      isTyping 
+    });
+  };
+
   const handleContentChange = (text: string) => {
     setContent(text);
+    handleEmitTyping(true);
 
-    // Emit typing
-    socketRef.current?.emit('typing', { chatroomId, isTyping: true });
-
-    // Auto-stop typing after 2s
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socketRef.current?.emit('typing', { chatroomId, isTyping: false });
-    }, 2000);
+      handleEmitTyping(false, true);
+    }, 1500);
   };
 
   const onSend = () => {
@@ -206,7 +251,7 @@ export function ChatRoomScreen() {
     if (!trimmed) return;
 
     // Stop typing indicator
-    socketRef.current?.emit('typing', { chatroomId, isTyping: false });
+    handleEmitTyping(false, true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     setContent('');
@@ -288,8 +333,8 @@ export function ChatRoomScreen() {
       {/* Messages */}
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior="padding"
+        keyboardVerticalOffset={90}
       >
         <FlatList
           ref={flatListRef}
@@ -339,18 +384,28 @@ export function ChatRoomScreen() {
             elevation: 8,
           }}
         >
-          {/* Text input */}
-          <View className="flex-1 flex-row items-end rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-2.5">
-            <TextInput
-              value={content}
-              onChangeText={handleContentChange}
-              placeholder="Nhập tin nhắn..."
-              placeholderTextColor="#94a3b8"
-              multiline
-              maxLength={2000}
-              className="max-h-[120px] flex-1 text-sm leading-5 text-slate-900"
-              style={{ paddingTop: 0, paddingBottom: 0 }}
-            />
+          {/* Text input with counter */}
+          <View className="flex-1 flex-col gap-1">
+            <View className="flex-row items-end rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-2.5">
+              <TextInput
+                value={content}
+                onChangeText={handleContentChange}
+                onBlur={() => handleEmitTyping(false, true)}
+                placeholder="Nhập tin nhắn..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                maxLength={2000}
+                className="flex-1 text-sm leading-5 text-slate-900"
+                style={{ 
+                  paddingTop: 0, 
+                  paddingBottom: 0,
+                  maxHeight: 110,
+                }}
+              />
+            </View>
+            <Text className="ml-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+              {content.length}/2000
+            </Text>
           </View>
 
           {/* Send button */}
