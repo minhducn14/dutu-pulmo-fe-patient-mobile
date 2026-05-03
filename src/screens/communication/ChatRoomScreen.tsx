@@ -339,8 +339,8 @@ export function ChatRoomScreen() {
       {/* Messages */}
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
+        behavior="padding"
+        keyboardVerticalOffset={ insets.top + 56}
       >
         <FlatList
           ref={flatListRef}
