@@ -93,7 +93,8 @@ export function ChangePasswordScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
         className="flex-1"
       >
         <ScrollView className="flex-1 px-4 pt-6">
