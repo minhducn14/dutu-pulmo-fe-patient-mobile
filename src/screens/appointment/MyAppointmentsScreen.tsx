@@ -41,7 +41,7 @@ function AppointmentCard({
       {isPendingPayment && (
         <View className="bg-amber-100/50 py-1.5 px-4 flex-row items-center gap-1.5 border-b border-amber-100">
           <MaterialIcons name="info-outline" size={12} color="#d97706" />
-          <Text className="text-[10px] font-bold text-amber-700">Lịch của bạn đang chờ thanh toán</Text>
+          <Text className="text-[10px] font-bold text-amber-700">Chờ thanh toán (Hết hạn sau 24h)</Text>
         </View>
       )}
 

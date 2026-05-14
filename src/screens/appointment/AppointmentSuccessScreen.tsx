@@ -237,6 +237,13 @@ export function AppointmentSuccessScreen() {
             Đã đặt lịch
           </Text>
           <Text className="mt-1 text-xs text-slate-400">{createdAtLabel}</Text>
+          
+          <View className="mx-4 mt-4 rounded-xl bg-amber-50 p-3 border border-amber-100 flex-row items-start gap-2">
+            <MaterialIcons name="timer" size={16} color="#d97706" style={{ marginTop: 2 }} />
+            <Text className="flex-1 text-[11px] text-amber-800 leading-[16px]">
+              Lưu ý: Bạn vui lòng thanh toán trong vòng **24 giờ** để giữ chỗ. Quá thời gian này lịch sẽ tự động bị hủy.
+            </Text>
+          </View>
         </View>
 
         {/* ── QR CARD ── */}

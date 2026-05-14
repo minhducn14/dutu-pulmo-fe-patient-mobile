@@ -33,7 +33,7 @@ export const PendingPaymentBanner: React.FC = () => {
               <MaterialIcons name="payment" size={16} color="#d97706" />
             </View>
             <Text className="text-amber-800 font-bold text-sm">
-              Bạn có {count} lịch khám chờ thanh toán
+              Bạn có {count} lịch chờ thanh toán (Hạn 24h)
             </Text>
           </View>
           <TouchableOpacity 
