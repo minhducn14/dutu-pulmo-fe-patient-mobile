@@ -13,7 +13,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { io, Socket } from 'socket.io-client';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -29,6 +28,8 @@ import { useChatMessages, useChatRoom, useSendChatMessage } from '@/hooks/useCha
 import { useRefreshByUser } from '@/hooks/useRefreshByUser';
 import { useAuthStore } from '@/store/auth.store';
 import { APP_CONFIG } from '@/constants/config';
+import { chatSocketService } from '@/services/chat-socket.service';
+import { useChatSocketStore } from '@/store/chat-socket.store';
 
 // ─── Message bubble ────────────────────────────────────────────────────────────
 function MessageBubble({
@@ -146,12 +147,12 @@ export function ChatRoomScreen() {
   const { chatroomId } = useLocalSearchParams<{ chatroomId: string }>();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
-  const accessToken = useAuthStore((state) => state.accessToken);
+  
+  const isConnected = useChatSocketStore((state) => state.isConnected);
+  const onlineUserIds = useChatSocketStore((state) => state.onlineUserIds);
 
   const [content, setContent] = useState('');
   const [typingUsers, setTypingUsers] = useState<{ userId: string; fullName: string }[]>([]);
-  const [realtimeMessages, setRealtimeMessages] = useState<any[]>([]);
-  const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingEmitAtRef = useRef(0);
   const isTypingRef = useRef(false);
@@ -165,52 +166,37 @@ export function ChatRoomScreen() {
     await Promise.all([roomQuery.refetch(), messagesQuery.refetch()]);
   });
 
-  // Merge server messages + realtime messages
-  const serverMessages = messagesQuery.data ?? [];
-  const allMessages = [
-    ...serverMessages,
-    ...realtimeMessages.filter(
-      (rm) => !serverMessages.find((sm: any) => sm.id === rm.id),
-    ),
-  ].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const allMessages = messagesQuery.data ?? [];
 
   // ── Socket.IO setup ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!chatroomId || !accessToken) return;
+    if (!chatroomId || !isConnected) return;
 
-    const socket: Socket = io(`${APP_CONFIG.API_BASE_URL}/chat`, {
-      transports: ['websocket'],
-      auth: { token: accessToken },
-    });
+    chatSocketService.joinRoom(chatroomId);
 
-    socketRef.current = socket;
+    const onTyping = (payload: { chatroomId: string; users: any[] }) => {
+      if (payload.chatroomId === chatroomId) {
+        setTypingUsers(payload.users.filter((u: any) => u.userId !== user?.id));
+      }
+    };
 
-    socket.on('connect', () => {
-      socket.emit('join-room', { chatroomId });
-    });
+    // Note: useChatMessages hook already handles the 'new-message' event for global cache
+    // We only need to scroll here if we want specific behavior
+    const onNewMessage = (msg: any) => {
+      if (msg.chatroomId === chatroomId) {
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
+      }
+    };
 
-    socket.on('new-message', (msg: any) => {
-      setRealtimeMessages((prev) => {
-        if (prev.find((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      // Scroll to bottom
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.warn('[ChatSocket] connect_error:', err.message);
-    });
+    chatSocketService.onTyping(onTyping);
+    chatSocketService.onNewMessage(onNewMessage);
 
     return () => {
-      console.log('[ChatSocket] Disconnecting socket');
-      socket.emit('leave-room', { chatroomId });
-      socket.disconnect();
-      socketRef.current = null;
+      chatSocketService.leaveRoom(chatroomId);
+      chatSocketService.offTyping(onTyping);
+      chatSocketService.offNewMessage(onNewMessage);
     };
-  }, [chatroomId, accessToken, user?.id]);
+  }, [chatroomId, isConnected, user?.id]);
 
   // ── Scroll to bottom on load ────────────────────────────────────────────────
   useEffect(() => {
@@ -219,20 +205,25 @@ export function ChatRoomScreen() {
     }
   }, [messagesQuery.isFetched]);
 
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (allMessages.length > 0) {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [allMessages.length]);
+
   const handleEmitTyping = (isTyping: boolean, force = false) => {
-    if (!chatroomId || !socketRef.current?.connected) return;
+    if (!chatroomId || !isConnected) return;
     
-    // Chỉ gửi khi có sự thay đổi trạng thái hoặc buộc gửi (force)
     if (!force && isTypingRef.current === isTyping) return;
 
     const now = Date.now();
-    // Throttling: giới hạn tần suất gửi isTyping: true (300ms)
     if (!force && isTyping && now - lastTypingEmitAtRef.current < 300) return;
 
     lastTypingEmitAtRef.current = now;
     isTypingRef.current = isTyping;
     
-    socketRef.current.emit('typing', { 
+    chatSocketService.emitTyping({ 
       chatroomId: chatroomId.trim(), 
       isTyping 
     });
@@ -252,7 +243,6 @@ export function ChatRoomScreen() {
     const trimmed = content.trim();
     if (!trimmed) return;
 
-    // Stop typing indicator
     handleEmitTyping(false, true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
@@ -260,11 +250,7 @@ export function ChatRoomScreen() {
     sendMutation.mutate(
       { chatroomId, content: trimmed },
       {
-        onSuccess: (msg) => {
-          setRealtimeMessages((prev) => {
-            if (prev.find((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
+        onSuccess: () => {
           setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
         },
       },
@@ -289,6 +275,7 @@ export function ChatRoomScreen() {
   const room = roomQuery.data;
   const peer = room.user1?.id === user?.id ? room.user2 : room.user1;
   const peerName = peer?.fullName ?? 'Bác sĩ';
+  const isPeerOnline = peer?.id ? onlineUserIds.has(peer.id) : false;
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -297,7 +284,6 @@ export function ChatRoomScreen() {
         className="flex-row items-center gap-3 bg-blue-500 px-4 pb-3 shadow-sm"
         style={{ paddingTop: insets.top + 8 }}
       >
-        {/* Back button */}
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -305,8 +291,7 @@ export function ChatRoomScreen() {
         >
           <MaterialIcons name="arrow-back-ios-new" size={22} color="white" />
         </TouchableOpacity>
-
-        {/* Peer info */}
+ 
         <View className="flex-1 flex-row items-center gap-2.5">
           <View className="relative">
             {peer?.avatarUrl ? (
@@ -320,7 +305,9 @@ export function ChatRoomScreen() {
                 <MaterialIcons name="person" size={20} color="white" />
               </View>
             )}
-            <View className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-blue-500 bg-green-400" />
+            {isPeerOnline && (
+              <View className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-blue-500 bg-green-400" />
+            )}
           </View>
           <View>
             <Text className="text-[15px] font-bold text-white">{peerName}</Text>
@@ -329,14 +316,12 @@ export function ChatRoomScreen() {
             </Text>
           </View>
         </View>
-
-        {/* More options */}
+ 
         <TouchableOpacity activeOpacity={0.7} className="rounded-full p-1">
           <MaterialIcons name="more-vert" size={22} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
       <KeyboardAvoidingView
         className="flex-1"
         behavior="padding"
@@ -373,12 +358,8 @@ export function ChatRoomScreen() {
               <TypingIndicator name={typingUsers[0].fullName} />
             ) : null
           }
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: false })
-          }
         />
 
-        {/* Input bar */}
         <View
           className="flex-row items-end gap-2 border-t border-slate-100 bg-white px-3 pt-3"
           style={{
@@ -390,7 +371,6 @@ export function ChatRoomScreen() {
             elevation: 8,
           }}
         >
-          {/* Text input with counter */}
           <View className="flex-1 flex-col gap-1">
             <View className="flex-row items-end rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-2.5">
               <TextInput
@@ -405,7 +385,7 @@ export function ChatRoomScreen() {
                 style={{ 
                   paddingTop: 0, 
                   paddingBottom: 0,
-                  maxHeight: 110, // Giới hạn khoảng 5 dòng (mỗi dòng ~20-22px)
+                  maxHeight: 110,
                 }}
               />
             </View>
@@ -414,7 +394,6 @@ export function ChatRoomScreen() {
             </Text>
           </View>
 
-          {/* Send button */}
           <TouchableOpacity
             onPress={onSend}
             disabled={!content.trim() || sendMutation.isPending}

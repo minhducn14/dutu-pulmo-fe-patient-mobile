@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { Loading } from '@/components/ui/Loading';
 import { startPushListeners } from '@/services/push-listener.service';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SocketHandler } from '@/components/chat/SocketHandler';
 
 import { Redirect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
@@ -56,6 +57,7 @@ export default function RootLayout() {
       <AppQueryProvider>
         <StatusBar style="dark" />
         <AuthGuard>
+          <SocketHandler />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
