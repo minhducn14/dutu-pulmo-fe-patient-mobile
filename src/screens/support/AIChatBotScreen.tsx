@@ -8,24 +8,100 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { Send, Bot, User, RotateCcw, Sparkles } from 'lucide-react-native';
+import { Send, Bot, User, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react-native';
+import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAIChatStore, Message } from '@/store/ai-chat.store';
 import { aiChatBotService } from '@/services/ai-chatbot.service';
-import { TypingEffect } from '@/components/chat/TypingEffect';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
+import { BookingPanel, type BookingData } from '@/components/chat/BookingPanel';
+import type { ConfirmDetail } from '@/services/ai-chatbot.service';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
 import { theme } from '@/constants/theme';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
+interface MarkdownMessageProps {
+  content: string;
+  color: string;
+}
+
+const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, color }) => {
+  return (
+    <Markdown
+      style={{
+        body: { color, fontSize: 15, lineHeight: 24 },
+        paragraph: { marginTop: 0, marginBottom: 8 },
+        strong: { fontWeight: '700', color },
+        em: { fontStyle: 'italic', color },
+        bullet_list: { marginTop: 0, marginBottom: 8 },
+        ordered_list: { marginTop: 0, marginBottom: 8 },
+        list_item: { marginBottom: 2 },
+        bullet_list_icon: { color },
+        bullet_list_content: { color, flex: 1 },
+        ordered_list_icon: { color },
+        ordered_list_content: { color, flex: 1 },
+        heading1: { color, fontSize: 18, lineHeight: 26, fontWeight: '700', marginTop: 4, marginBottom: 8 },
+        heading2: { color, fontSize: 17, lineHeight: 25, fontWeight: '700', marginTop: 4, marginBottom: 8 },
+        heading3: { color, fontSize: 16, lineHeight: 24, fontWeight: '700', marginTop: 4, marginBottom: 8 },
+        link: { color: theme.colors.primary, textDecorationLine: 'underline' },
+      }}
+    >
+      {content}
+    </Markdown>
+  );
+};
+
+const TypingMarkdownMessage: React.FC<
+  MarkdownMessageProps & { speed?: number }
+> = ({ content, color, speed = 20 }) => {
+  const [displayedText, setDisplayedText] = useState('');
+
+  React.useEffect(() => {
+    setDisplayedText('');
+    const chars = Array.from(content.replace(/[\u200B-\u200D\uFEFF]/g, ''));
+    let index = 0;
+
+    const timer = setInterval(() => {
+      if (index < chars.length) {
+        const char = chars[index] ?? '';
+        setDisplayedText((previous) => previous + char);
+        index += 1;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [content, speed]);
+
+  return (
+    <MarkdownMessage
+      content={displayedText}
+      color={color}
+    />
+  );
+};
+
 export function AIChatBotScreen() {
   const [inputText, setInputText] = useState('');
-  const { messages, sessionId, isLoading, addMessage, setSessionId, setLoading, clearHistory } =
-    useAIChatStore();
+  const {
+    messages,
+    sessionId,
+    isLoading,
+    addMessage,
+    setSessionId,
+    setLoading,
+    clearHistory,
+    updateMessage,
+  } = useAIChatStore();
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
+
+  const cleanMessageContent = useCallback((text: string) => {
+    return text.replace(/(?:^|\n)(?:date|time|type):\s*[^\n]*/gi, '').trim();
+  }, []);
 
   const handleSend = useCallback(async (text?: string) => {
     const messageText = text || inputText.trim();
@@ -50,12 +126,21 @@ export function AIChatBotScreen() {
           setSessionId(response.meta.sessionId);
         }
 
+        const responseData = response.data as typeof response.data & {
+          action?: string;
+          bookingData?: BookingData;
+        };
+
         const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: response.data.message ?? '',
           timestamp: response.data.timestamp ?? new Date().toISOString(),
           suggestedActions: response.data.suggestedActions ?? [],
+          bookingData:
+            responseData.action === 'OPEN_BOOKING' && responseData.bookingData?.doctorId
+              ? responseData.bookingData
+              : undefined,
         };
         addMessage(aiMsg);
       }
@@ -79,9 +164,32 @@ export function AIChatBotScreen() {
     }
   }, [inputText, isLoading, sessionId, addMessage, setLoading, setSessionId]);
 
+  const handleBookingConfirm = useCallback((
+    messageId: string,
+    _detail: ConfirmDetail,
+    confirmMessage: string,
+  ) => {
+    updateMessage(messageId, { isBookingCompleted: true });
+
+    const confirmMsg: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: confirmMessage,
+      timestamp: new Date().toISOString(),
+      suggestedActions: [
+        'Xem lịch hẹn của tôi',
+        'Chuẩn bị gì trước khi khám?',
+        'Đặt lịch khác',
+      ],
+    };
+
+    addMessage(confirmMsg);
+  }, [addMessage, updateMessage]);
+
   const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isAi = item.role === 'assistant';
     const isLatestAi = isAi && index === 0;
+    const displayContent = cleanMessageContent(item.content);
 
     return (
       <View className={`mb-4 flex-row ${isAi ? 'justify-start' : 'justify-end'}`}>
@@ -99,19 +207,49 @@ export function AIChatBotScreen() {
             style={isAi ? theme.shadow.card : {}}
           >
             {isLatestAi ? (
-              <>
-                <TypingEffect
-                  text={item.content}
-                  className="text-[15px] leading-6 text-slate-800"
-                  speed={20}
-                />
-              </>
+              <TypingMarkdownMessage
+                content={displayContent}
+                color="#1F2937"
+                speed={20}
+              />
             ) : (
-              <Text
-                className={`text-[15px] leading-6 ${isAi ? 'text-slate-800' : 'text-white'}`}
-              >
-                {item.content}
-              </Text>
+              isAi ? (
+                <MarkdownMessage
+                  content={displayContent}
+                  color="#1F2937"
+                />
+              ) : (
+                <Text className="text-[15px] leading-6 text-white">
+                  {displayContent}
+                </Text>
+              )
+            )}
+
+            {isAi && item.bookingData && (
+              <View className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                {item.isBookingCompleted ? (
+                  <View className="items-center justify-center gap-2 bg-green-50 px-4 py-6">
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                      <CheckCircle2 size={24} color="#16A34A" />
+                    </View>
+                    <Text className="text-center text-sm font-bold text-slate-800">
+                      Lịch khám đã được xác nhận!
+                    </Text>
+                    <Text className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      Bạn đã hoàn tất đặt lịch cho tin nhắn này
+                    </Text>
+                  </View>
+                ) : (
+                  <BookingPanel
+                    messageId={item.id}
+                    bookingData={item.bookingData}
+                    sessionId={sessionId}
+                    onConfirm={(detail, message) =>
+                      handleBookingConfirm(item.id, detail, message)
+                    }
+                  />
+                )}
+              </View>
             )}
 
             {isAi && item.suggestedActions && item.suggestedActions.length > 0 && (

@@ -8,6 +8,8 @@ export interface Message {
   content: string;
   timestamp: string;
   suggestedActions?: string[];
+  bookingData?: any;
+  isBookingCompleted?: boolean;
 }
 
 interface AIChatState {
@@ -18,6 +20,7 @@ interface AIChatState {
   setSessionId: (id: string) => void;
   setLoading: (loading: boolean) => void;
   clearHistory: () => void;
+  updateMessage: (id: string, updates: Partial<Message>) => void;
 }
 
 export const useAIChatStore = create<AIChatState>()(
@@ -31,6 +34,12 @@ export const useAIChatStore = create<AIChatState>()(
       setSessionId: (id) => set({ sessionId: id }),
       setLoading: (loading) => set({ isLoading: loading }),
       clearHistory: () => set({ messages: [], sessionId: null }),
+      updateMessage: (id, updates) =>
+        set((state) => ({
+          messages: state.messages.map((message) =>
+            message.id === id ? { ...message, ...updates } : message,
+          ),
+        })),
     }),
     {
       name: 'ai-chat-history',

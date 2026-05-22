@@ -1,6 +1,35 @@
 import axios from 'axios';
 import { APP_CONFIG } from '@/constants/config';
 
+export interface ConfirmDetail {
+  doctorId: string;
+  doctorName: string;
+  selectedDate: string;
+  selectedSlot: string;
+  visitType: 'VIDEO' | 'IN_PERSON';
+}
+
+export interface BookingConfirmPayload extends ConfirmDetail {
+  sessionId: string;
+  messageId: string;
+}
+
+export interface BookingConfirmResponse {
+  success: boolean;
+  data: {
+    message: string;
+    type: string;
+    severity: string;
+    timestamp: string;
+    suggestedActions: string[];
+  };
+  meta: {
+    sessionId: string;
+    queryType: string;
+    processedAt: string;
+  };
+}
+
 export interface AIChatResponse {
   success: boolean;
   data: {
@@ -51,3 +80,21 @@ export const aiChatBotService = {
     }
   },
 };
+
+export async function notifyBookingConfirmed(
+  payload: BookingConfirmPayload,
+): Promise<BookingConfirmResponse> {
+  const aiWebhookUrl = APP_CONFIG.AI_WEBHOOK_URL || '';
+  const baseUrl = aiWebhookUrl.substring(0, aiWebhookUrl.lastIndexOf('/'));
+
+  if (!baseUrl) {
+    throw new Error('AI Webhook URL is not configured');
+  }
+
+  const response = await axios.post<BookingConfirmResponse>(
+    `${baseUrl}/booking-confirmed`,
+    payload,
+  );
+
+  return response.data;
+}
